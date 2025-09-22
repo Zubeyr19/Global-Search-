@@ -1,1 +1,14 @@
-{}
+{
+  "mappings": {
+    "properties": {
+      "location_id": { "type": "keyword" },
+      "company_id": { "type": "keyword" },
+      "name": { "type": "text", "analyzer": "standard" },
+      "address": { "type": "text" },
+      "tenant_id": { "type": "keyword" },
+      "allowed_roles": { "type": "keyword" },
+      "visibility": { "type": "keyword" }
+    }
+  }
+}
+
