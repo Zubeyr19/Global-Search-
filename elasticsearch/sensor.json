@@ -1,1 +1,15 @@
-{}
+{
+  "mappings": {
+    "properties": {
+      "sensor_id": { "type": "keyword" },
+      "zone_id": { "type": "keyword" },
+      "type": { "type": "keyword" },
+      "reading": { "type": "float" },
+      "timestamp": { "type": "date" },
+      "tenant_id": { "type": "keyword" },
+      "allowed_roles": { "type": "keyword" },
+      "visibility": { "type": "keyword" }
+    }
+  }
+}
+
