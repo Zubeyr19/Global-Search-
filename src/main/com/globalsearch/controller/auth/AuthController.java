@@ -5,9 +5,9 @@ import com.globalsearch.dto.response.LoginResponse;
 import com.globalsearch.entity.AuditLog;
 import com.globalsearch.entity.Company;
 import com.globalsearch.entity.User;
-import com.globalsearch.repository.AuditLogRepository;
 import com.globalsearch.repository.CompanyRepository;
 import com.globalsearch.security.JwtTokenProvider;
+import com.globalsearch.service.AuditLogService;
 import com.globalsearch.service.auth.CustomUserDetailsService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -40,7 +40,7 @@ public class AuthController {
     private final JwtTokenProvider jwtTokenProvider;
     private final CustomUserDetailsService userDetailsService;
     private final CompanyRepository companyRepository;
-    private final AuditLogRepository auditLogRepository;
+    private final AuditLogService auditLogService;
 
     @Value("${jwt.expiration:86400000}")
     private long jwtExpiration;
@@ -87,7 +87,8 @@ public class AuthController {
             user.setLastLogin(LocalDateTime.now());
 
             // Audit log - successful login
-            auditLog(user, AuditLog.AuditAction.LOGIN, request, 200, null);
+            auditLogService.logAuthEvent(AuditLog.AuditAction.LOGIN, user.getId(), user.getUsername(),
+                    user.getTenantId(), request, 200, null);
 
             // Build response
             LoginResponse response = LoginResponse.builder()
@@ -115,7 +116,8 @@ public class AuthController {
             // Audit log - failed login
             try {
                 User user = userDetailsService.loadUserEntityByUsername(loginRequest.getUsername());
-                auditLog(user, AuditLog.AuditAction.LOGIN_FAILED, request, 401, "Invalid credentials");
+                auditLogService.logAuthEvent(AuditLog.AuditAction.LOGIN_FAILED, user.getId(),
+                        user.getUsername(), user.getTenantId(), request, 401, "Invalid credentials");
             } catch (Exception ignored) {}
 
             Map<String, String> error = new HashMap<>();
@@ -176,7 +178,8 @@ public class AuthController {
         if (auth != null && auth.getName() != null) {
             try {
                 User user = userDetailsService.loadUserEntityByUsername(auth.getName());
-                auditLog(user, AuditLog.AuditAction.LOGOUT, request, 200, null);
+                auditLogService.logAuthEvent(AuditLog.AuditAction.LOGOUT, user.getId(),
+                        user.getUsername(), user.getTenantId(), request, 200, null);
             } catch (Exception ignored) {}
         }
 
@@ -207,28 +210,5 @@ public class AuthController {
 
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(Map.of("error", "Not authenticated"));
-    }
-
-    private void auditLog(User user, AuditLog.AuditAction action,
-                          HttpServletRequest request, int status, String error) {
-        try {
-            AuditLog log = AuditLog.builder()
-                    .userId(user.getId())
-                    .username(user.getUsername())
-                    .tenantId(user.getTenantId())
-                    .action(action)
-                    .timestamp(LocalDateTime.now())
-                    .ipAddress(request.getRemoteAddr())
-                    .userAgent(request.getHeader("User-Agent"))
-                    .requestMethod(request.getMethod())
-                    .requestUrl(request.getRequestURI())
-                    .responseStatus(status)
-                    .errorMessage(error)
-                    .build();
-
-            auditLogRepository.save(log);
-        } catch (Exception e) {
-            log.error("Failed to save audit log: ", e);
-        }
     }
 }
