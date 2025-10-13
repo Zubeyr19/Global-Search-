@@ -11,6 +11,8 @@ import com.globalsearch.repository.search.CompanySearchRepository;
 import com.globalsearch.repository.search.LocationSearchRepository;
 import com.globalsearch.repository.search.SensorSearchRepository;
 import com.globalsearch.repository.search.ZoneSearchRepository;
+import com.globalsearch.service.AuditLogService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -30,12 +32,13 @@ public class SearchService {
     private final LocationSearchRepository locationSearchRepository;
     private final ZoneSearchRepository zoneSearchRepository;
     private final SensorSearchRepository sensorSearchRepository;
+    private final AuditLogService auditLogService;
 
     /**
      * Global search with document-level security enforcement
      * Users only see data they have access to based on tenantId and roles
      */
-    public GlobalSearchResponse globalSearch(GlobalSearchRequest request, User currentUser) {
+    public GlobalSearchResponse globalSearch(GlobalSearchRequest request, User currentUser, HttpServletRequest httpRequest) {
         long startTime = System.currentTimeMillis();
 
         log.debug("Global search for user: {}, tenant: {}, query: {}",
@@ -75,6 +78,16 @@ public class SearchService {
 
         long duration = System.currentTimeMillis() - startTime;
 
+        // Log search event for audit trail
+        auditLogService.logSearchEvent(
+                currentUser.getId(),
+                currentUser.getUsername(),
+                currentUser.getTenantId(),
+                request.getQuery(),
+                allResults.size(),
+                httpRequest
+        );
+
         return GlobalSearchResponse.builder()
                 .results(paginatedResults)
                 .totalResults((long) allResults.size())
@@ -88,7 +101,7 @@ public class SearchService {
     /**
      * Admin search - can search across all tenants
      */
-    public GlobalSearchResponse adminGlobalSearch(GlobalSearchRequest request, User admin) {
+    public GlobalSearchResponse adminGlobalSearch(GlobalSearchRequest request, User admin, HttpServletRequest httpRequest) {
         long startTime = System.currentTimeMillis();
 
         log.debug("Admin global search by: {}, query: {}", admin.getUsername(), request.getQuery());
@@ -126,6 +139,16 @@ public class SearchService {
                 allResults.subList(Math.min(start, allResults.size()), end);
 
         long duration = System.currentTimeMillis() - startTime;
+
+        // Log admin search event for audit trail
+        auditLogService.logSearchEvent(
+                admin.getId(),
+                admin.getUsername(),
+                "ADMIN_CROSS_TENANT",
+                request.getQuery(),
+                allResults.size(),
+                httpRequest
+        );
 
         return GlobalSearchResponse.builder()
                 .results(paginatedResults)
