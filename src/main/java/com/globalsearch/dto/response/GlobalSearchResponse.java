@@ -37,5 +37,11 @@ public class GlobalSearchResponse {
         private String status;
         private Object metadata; // Additional entity-specific data
         private Double relevanceScore;
+
+        // Highlighting information
+        private String highlightedName;
+        private String highlightedDescription;
+        private List<String> matchedTerms; // Terms that matched in the search
+        private Boolean isFuzzyMatch; // Whether this was a fuzzy match
     }
 }
