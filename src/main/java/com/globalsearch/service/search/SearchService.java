@@ -1,19 +1,14 @@
 package com.globalsearch.service.search;
 
-import com.globalsearch.document.CompanyDocument;
-import com.globalsearch.document.LocationDocument;
-import com.globalsearch.document.SensorDocument;
-import com.globalsearch.document.ZoneDocument;
+import com.globalsearch.document.*;
 import com.globalsearch.dto.request.GlobalSearchRequest;
 import com.globalsearch.dto.response.GlobalSearchResponse;
 import com.globalsearch.entity.User;
-import com.globalsearch.repository.search.CompanySearchRepository;
-import com.globalsearch.repository.search.LocationSearchRepository;
-import com.globalsearch.repository.search.SensorSearchRepository;
-import com.globalsearch.repository.search.ZoneSearchRepository;
+import com.globalsearch.repository.search.*;
 import com.globalsearch.dto.WebSocketMessage;
 import com.globalsearch.service.AuditLogService;
 import com.globalsearch.service.NotificationService;
+import com.globalsearch.util.SearchUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +29,8 @@ public class SearchService {
     private final LocationSearchRepository locationSearchRepository;
     private final ZoneSearchRepository zoneSearchRepository;
     private final SensorSearchRepository sensorSearchRepository;
+    private final ReportSearchRepository reportSearchRepository;
+    private final DashboardSearchRepository dashboardSearchRepository;
     private final AuditLogService auditLogService;
     private final NotificationService notificationService;
 
@@ -50,24 +47,40 @@ public class SearchService {
         // Create pageable
         Pageable pageable = createPageable(request);
 
+        // Expand query with synonyms if enabled
+        List<String> searchTerms = new ArrayList<>();
+        searchTerms.add(request.getQuery());
+        if (Boolean.TRUE.equals(request.getEnableSynonyms())) {
+            searchTerms.addAll(SearchUtils.expandWithSynonyms(request.getQuery()));
+            log.debug("Expanded search with synonyms: {}", searchTerms);
+        }
+
         // Collect all results
         List<GlobalSearchResponse.SearchResultItem> allResults = new ArrayList<>();
 
         // Search entities based on user permissions
         if (shouldSearchEntity(request, "companies")) {
-            allResults.addAll(searchCompanies(request, currentUser));
+            allResults.addAll(searchCompanies(request, currentUser, searchTerms));
         }
 
         if (shouldSearchEntity(request, "locations")) {
-            allResults.addAll(searchLocations(request, currentUser));
+            allResults.addAll(searchLocations(request, currentUser, searchTerms));
         }
 
         if (shouldSearchEntity(request, "zones")) {
-            allResults.addAll(searchZones(request, currentUser));
+            allResults.addAll(searchZones(request, currentUser, searchTerms));
         }
 
         if (shouldSearchEntity(request, "sensors")) {
-            allResults.addAll(searchSensors(request, currentUser));
+            allResults.addAll(searchSensors(request, currentUser, searchTerms));
+        }
+
+        if (shouldSearchEntity(request, "reports")) {
+            allResults.addAll(searchReports(request, currentUser, searchTerms));
+        }
+
+        if (shouldSearchEntity(request, "dashboards")) {
+            allResults.addAll(searchDashboards(request, currentUser, searchTerms));
         }
 
         // Sort by relevance or specified field
@@ -126,23 +139,33 @@ public class SearchService {
             throw new SecurityException("User does not have admin privileges");
         }
 
+        // Expand query with synonyms if enabled
+        List<String> searchTerms = new ArrayList<>();
+        if (request.getQuery() != null && !request.getQuery().isEmpty()) {
+            searchTerms.add(request.getQuery());
+            if (Boolean.TRUE.equals(request.getEnableSynonyms())) {
+                searchTerms.addAll(SearchUtils.expandWithSynonyms(request.getQuery()));
+                log.debug("Admin search - Expanded with synonyms: {}", searchTerms);
+            }
+        }
+
         // Admin can search without tenant restriction
         List<GlobalSearchResponse.SearchResultItem> allResults = new ArrayList<>();
 
         if (shouldSearchEntity(request, "companies")) {
-            allResults.addAll(adminSearchCompanies(request));
+            allResults.addAll(adminSearchCompanies(request, searchTerms));
         }
 
         if (shouldSearchEntity(request, "locations")) {
-            allResults.addAll(adminSearchLocations(request));
+            allResults.addAll(adminSearchLocations(request, searchTerms));
         }
 
         if (shouldSearchEntity(request, "zones")) {
-            allResults.addAll(adminSearchZones(request));
+            allResults.addAll(adminSearchZones(request, searchTerms));
         }
 
         if (shouldSearchEntity(request, "sensors")) {
-            allResults.addAll(adminSearchSensors(request));
+            allResults.addAll(adminSearchSensors(request, searchTerms));
         }
 
         // Sort and paginate
@@ -177,27 +200,53 @@ public class SearchService {
 
     // ==================== TENANT-RESTRICTED SEARCH METHODS ====================
 
-    private List<GlobalSearchResponse.SearchResultItem> searchCompanies(GlobalSearchRequest request, User user) {
+    private List<GlobalSearchResponse.SearchResultItem> searchCompanies(
+            GlobalSearchRequest request, User user, List<String> searchTerms) {
         List<CompanyDocument> companies;
 
         if (request.getQuery() != null && !request.getQuery().isEmpty()) {
             companies = companySearchRepository.findByTenantIdAndNameContainingIgnoreCase(
                     user.getTenantId(), request.getQuery());
+
+            // Apply fuzzy search if enabled
+            if (Boolean.TRUE.equals(request.getEnableFuzzySearch())) {
+                List<CompanyDocument> allCompanies = companySearchRepository.findByTenantId(user.getTenantId());
+                for (CompanyDocument company : allCompanies) {
+                    boolean fuzzyMatch = SearchUtils.isFuzzyMatch(
+                            company.getName(), request.getQuery(), request.getFuzzyMaxEdits());
+                    if (fuzzyMatch && !companies.contains(company)) {
+                        companies.add(company);
+                    }
+                }
+            }
         } else {
             companies = companySearchRepository.findByTenantId(user.getTenantId());
         }
 
         return companies.stream()
-                .map(this::toSearchResultItem)
+                .map(doc -> toSearchResultItem(doc, request, searchTerms))
                 .collect(Collectors.toList());
     }
 
-    private List<GlobalSearchResponse.SearchResultItem> searchLocations(GlobalSearchRequest request, User user) {
+    private List<GlobalSearchResponse.SearchResultItem> searchLocations(
+            GlobalSearchRequest request, User user, List<String> searchTerms) {
         List<LocationDocument> locations;
 
         if (request.getQuery() != null && !request.getQuery().isEmpty()) {
             locations = locationSearchRepository.findByTenantIdAndNameContainingIgnoreCase(
                     user.getTenantId(), request.getQuery());
+
+            // Apply fuzzy search if enabled
+            if (Boolean.TRUE.equals(request.getEnableFuzzySearch())) {
+                List<LocationDocument> allLocations = locationSearchRepository.findByTenantId(user.getTenantId());
+                for (LocationDocument location : allLocations) {
+                    boolean fuzzyMatch = SearchUtils.isFuzzyMatch(
+                            location.getName(), request.getQuery(), request.getFuzzyMaxEdits());
+                    if (fuzzyMatch && !locations.contains(location)) {
+                        locations.add(location);
+                    }
+                }
+            }
         } else {
             locations = locationSearchRepository.findByTenantId(user.getTenantId());
         }
@@ -216,16 +265,29 @@ public class SearchService {
         }
 
         return locations.stream()
-                .map(this::toSearchResultItem)
+                .map(doc -> toSearchResultItem(doc, request, searchTerms))
                 .collect(Collectors.toList());
     }
 
-    private List<GlobalSearchResponse.SearchResultItem> searchZones(GlobalSearchRequest request, User user) {
+    private List<GlobalSearchResponse.SearchResultItem> searchZones(
+            GlobalSearchRequest request, User user, List<String> searchTerms) {
         List<ZoneDocument> zones;
 
         if (request.getQuery() != null && !request.getQuery().isEmpty()) {
             zones = zoneSearchRepository.findByTenantIdAndNameContainingIgnoreCase(
                     user.getTenantId(), request.getQuery());
+
+            // Apply fuzzy search if enabled
+            if (Boolean.TRUE.equals(request.getEnableFuzzySearch())) {
+                List<ZoneDocument> allZones = zoneSearchRepository.findByTenantId(user.getTenantId());
+                for (ZoneDocument zone : allZones) {
+                    boolean fuzzyMatch = SearchUtils.isFuzzyMatch(
+                            zone.getName(), request.getQuery(), request.getFuzzyMaxEdits());
+                    if (fuzzyMatch && !zones.contains(zone)) {
+                        zones.add(zone);
+                    }
+                }
+            }
         } else {
             zones = zoneSearchRepository.findByTenantId(user.getTenantId());
         }
@@ -238,16 +300,29 @@ public class SearchService {
         }
 
         return zones.stream()
-                .map(this::toSearchResultItem)
+                .map(doc -> toSearchResultItem(doc, request, searchTerms))
                 .collect(Collectors.toList());
     }
 
-    private List<GlobalSearchResponse.SearchResultItem> searchSensors(GlobalSearchRequest request, User user) {
+    private List<GlobalSearchResponse.SearchResultItem> searchSensors(
+            GlobalSearchRequest request, User user, List<String> searchTerms) {
         List<SensorDocument> sensors;
 
         if (request.getQuery() != null && !request.getQuery().isEmpty()) {
             sensors = sensorSearchRepository.findByTenantIdAndNameContainingIgnoreCase(
                     user.getTenantId(), request.getQuery());
+
+            // Apply fuzzy search if enabled
+            if (Boolean.TRUE.equals(request.getEnableFuzzySearch())) {
+                List<SensorDocument> allSensors = sensorSearchRepository.findByTenantId(user.getTenantId());
+                for (SensorDocument sensor : allSensors) {
+                    boolean fuzzyMatch = SearchUtils.isFuzzyMatch(
+                            sensor.getName(), request.getQuery(), request.getFuzzyMaxEdits());
+                    if (fuzzyMatch && !sensors.contains(sensor)) {
+                        sensors.add(sensor);
+                    }
+                }
+            }
         } else {
             sensors = sensorSearchRepository.findByTenantId(user.getTenantId());
         }
@@ -266,13 +341,70 @@ public class SearchService {
         }
 
         return sensors.stream()
-                .map(this::toSearchResultItem)
+                .map(doc -> toSearchResultItem(doc, request, searchTerms))
+                .collect(Collectors.toList());
+    }
+
+    private List<GlobalSearchResponse.SearchResultItem> searchReports(
+            GlobalSearchRequest request, User user, List<String> searchTerms) {
+        List<ReportDocument> reports;
+
+        if (request.getQuery() != null && !request.getQuery().isEmpty()) {
+            reports = reportSearchRepository.findByTenantIdAndNameContainingIgnoreCase(
+                    user.getTenantId(), request.getQuery());
+
+            // Apply fuzzy search if enabled
+            if (Boolean.TRUE.equals(request.getEnableFuzzySearch())) {
+                List<ReportDocument> allReports = reportSearchRepository.findByTenantId(user.getTenantId());
+                for (ReportDocument report : allReports) {
+                    boolean fuzzyMatch = SearchUtils.isFuzzyMatch(
+                            report.getName(), request.getQuery(), request.getFuzzyMaxEdits());
+                    if (fuzzyMatch && !reports.contains(report)) {
+                        reports.add(report);
+                    }
+                }
+            }
+        } else {
+            reports = reportSearchRepository.findByTenantId(user.getTenantId());
+        }
+
+        return reports.stream()
+                .map(doc -> toSearchResultItem(doc, request, searchTerms))
+                .collect(Collectors.toList());
+    }
+
+    private List<GlobalSearchResponse.SearchResultItem> searchDashboards(
+            GlobalSearchRequest request, User user, List<String> searchTerms) {
+        List<DashboardDocument> dashboards;
+
+        if (request.getQuery() != null && !request.getQuery().isEmpty()) {
+            dashboards = dashboardSearchRepository.findByTenantIdAndNameContainingIgnoreCase(
+                    user.getTenantId(), request.getQuery());
+
+            // Apply fuzzy search if enabled
+            if (Boolean.TRUE.equals(request.getEnableFuzzySearch())) {
+                List<DashboardDocument> allDashboards = dashboardSearchRepository.findByTenantId(user.getTenantId());
+                for (DashboardDocument dashboard : allDashboards) {
+                    boolean fuzzyMatch = SearchUtils.isFuzzyMatch(
+                            dashboard.getName(), request.getQuery(), request.getFuzzyMaxEdits());
+                    if (fuzzyMatch && !dashboards.contains(dashboard)) {
+                        dashboards.add(dashboard);
+                    }
+                }
+            }
+        } else {
+            dashboards = dashboardSearchRepository.findByTenantId(user.getTenantId());
+        }
+
+        return dashboards.stream()
+                .map(doc -> toSearchResultItem(doc, request, searchTerms))
                 .collect(Collectors.toList());
     }
 
     // ==================== ADMIN SEARCH METHODS (NO TENANT RESTRICTION) ====================
 
-    private List<GlobalSearchResponse.SearchResultItem> adminSearchCompanies(GlobalSearchRequest request) {
+    private List<GlobalSearchResponse.SearchResultItem> adminSearchCompanies(
+            GlobalSearchRequest request, List<String> searchTerms) {
         List<CompanyDocument> companies;
 
         if (request.getQuery() != null && !request.getQuery().isEmpty()) {
@@ -282,11 +414,12 @@ public class SearchService {
         }
 
         return companies.stream()
-                .map(this::toSearchResultItem)
+                .map(doc -> toSearchResultItem(doc, request, searchTerms))
                 .collect(Collectors.toList());
     }
 
-    private List<GlobalSearchResponse.SearchResultItem> adminSearchLocations(GlobalSearchRequest request) {
+    private List<GlobalSearchResponse.SearchResultItem> adminSearchLocations(
+            GlobalSearchRequest request, List<String> searchTerms) {
         List<LocationDocument> locations;
 
         if (request.getQuery() != null && !request.getQuery().isEmpty()) {
@@ -296,11 +429,12 @@ public class SearchService {
         }
 
         return locations.stream()
-                .map(this::toSearchResultItem)
+                .map(doc -> toSearchResultItem(doc, request, searchTerms))
                 .collect(Collectors.toList());
     }
 
-    private List<GlobalSearchResponse.SearchResultItem> adminSearchZones(GlobalSearchRequest request) {
+    private List<GlobalSearchResponse.SearchResultItem> adminSearchZones(
+            GlobalSearchRequest request, List<String> searchTerms) {
         List<ZoneDocument> zones;
 
         if (request.getQuery() != null && !request.getQuery().isEmpty()) {
@@ -310,11 +444,12 @@ public class SearchService {
         }
 
         return zones.stream()
-                .map(this::toSearchResultItem)
+                .map(doc -> toSearchResultItem(doc, request, searchTerms))
                 .collect(Collectors.toList());
     }
 
-    private List<GlobalSearchResponse.SearchResultItem> adminSearchSensors(GlobalSearchRequest request) {
+    private List<GlobalSearchResponse.SearchResultItem> adminSearchSensors(
+            GlobalSearchRequest request, List<String> searchTerms) {
         List<SensorDocument> sensors;
 
         if (request.getQuery() != null && !request.getQuery().isEmpty()) {
@@ -324,7 +459,7 @@ public class SearchService {
         }
 
         return sensors.stream()
-                .map(this::toSearchResultItem)
+                .map(doc -> toSearchResultItem(doc, request, searchTerms))
                 .collect(Collectors.toList());
     }
 
@@ -346,7 +481,10 @@ public class SearchService {
         return PageRequest.of(request.getPage(), request.getSize(), sort);
     }
 
-    private GlobalSearchResponse.SearchResultItem toSearchResultItem(CompanyDocument doc) {
+    private GlobalSearchResponse.SearchResultItem toSearchResultItem(
+            CompanyDocument doc, GlobalSearchRequest request, List<String> searchTerms) {
+        boolean enableHighlighting = Boolean.TRUE.equals(request.getEnableHighlighting());
+
         return GlobalSearchResponse.SearchResultItem.builder()
                 .entityType("COMPANY")
                 .id(doc.getId())
@@ -354,6 +492,11 @@ public class SearchService {
                 .description(doc.getDescription())
                 .status(doc.getStatus())
                 .relevanceScore(1.0)
+                .highlightedName(enableHighlighting ? SearchUtils.highlightMultiple(doc.getName(), searchTerms) : null)
+                .highlightedDescription(enableHighlighting ? SearchUtils.highlightMultiple(doc.getDescription(), searchTerms) : null)
+                .matchedTerms(SearchUtils.getMatchedTerms(doc.getName() + " " + doc.getDescription(), searchTerms))
+                .isFuzzyMatch(Boolean.TRUE.equals(request.getEnableFuzzySearch()) &&
+                        SearchUtils.isFuzzyMatch(doc.getName(), request.getQuery(), request.getFuzzyMaxEdits()))
                 .metadata(Map.of(
                         "tenantId", doc.getTenantId(),
                         "industry", doc.getIndustry() != null ? doc.getIndustry() : "",
@@ -362,7 +505,10 @@ public class SearchService {
                 .build();
     }
 
-    private GlobalSearchResponse.SearchResultItem toSearchResultItem(LocationDocument doc) {
+    private GlobalSearchResponse.SearchResultItem toSearchResultItem(
+            LocationDocument doc, GlobalSearchRequest request, List<String> searchTerms) {
+        boolean enableHighlighting = Boolean.TRUE.equals(request.getEnableHighlighting());
+
         return GlobalSearchResponse.SearchResultItem.builder()
                 .entityType("LOCATION")
                 .id(doc.getId())
@@ -370,6 +516,11 @@ public class SearchService {
                 .description(doc.getDescription())
                 .status(doc.getStatus())
                 .relevanceScore(0.9)
+                .highlightedName(enableHighlighting ? SearchUtils.highlightMultiple(doc.getName(), searchTerms) : null)
+                .highlightedDescription(enableHighlighting ? SearchUtils.highlightMultiple(doc.getDescription(), searchTerms) : null)
+                .matchedTerms(SearchUtils.getMatchedTerms(doc.getName() + " " + doc.getDescription(), searchTerms))
+                .isFuzzyMatch(Boolean.TRUE.equals(request.getEnableFuzzySearch()) &&
+                        SearchUtils.isFuzzyMatch(doc.getName(), request.getQuery(), request.getFuzzyMaxEdits()))
                 .metadata(Map.of(
                         "tenantId", doc.getTenantId(),
                         "companyId", doc.getCompanyId(),
@@ -379,7 +530,10 @@ public class SearchService {
                 .build();
     }
 
-    private GlobalSearchResponse.SearchResultItem toSearchResultItem(ZoneDocument doc) {
+    private GlobalSearchResponse.SearchResultItem toSearchResultItem(
+            ZoneDocument doc, GlobalSearchRequest request, List<String> searchTerms) {
+        boolean enableHighlighting = Boolean.TRUE.equals(request.getEnableHighlighting());
+
         return GlobalSearchResponse.SearchResultItem.builder()
                 .entityType("ZONE")
                 .id(doc.getId())
@@ -387,6 +541,11 @@ public class SearchService {
                 .description(doc.getDescription())
                 .status(doc.getStatus())
                 .relevanceScore(0.8)
+                .highlightedName(enableHighlighting ? SearchUtils.highlightMultiple(doc.getName(), searchTerms) : null)
+                .highlightedDescription(enableHighlighting ? SearchUtils.highlightMultiple(doc.getDescription(), searchTerms) : null)
+                .matchedTerms(SearchUtils.getMatchedTerms(doc.getName() + " " + doc.getDescription(), searchTerms))
+                .isFuzzyMatch(Boolean.TRUE.equals(request.getEnableFuzzySearch()) &&
+                        SearchUtils.isFuzzyMatch(doc.getName(), request.getQuery(), request.getFuzzyMaxEdits()))
                 .metadata(Map.of(
                         "tenantId", doc.getTenantId(),
                         "locationId", doc.getLocationId(),
@@ -395,7 +554,10 @@ public class SearchService {
                 .build();
     }
 
-    private GlobalSearchResponse.SearchResultItem toSearchResultItem(SensorDocument doc) {
+    private GlobalSearchResponse.SearchResultItem toSearchResultItem(
+            SensorDocument doc, GlobalSearchRequest request, List<String> searchTerms) {
+        boolean enableHighlighting = Boolean.TRUE.equals(request.getEnableHighlighting());
+
         return GlobalSearchResponse.SearchResultItem.builder()
                 .entityType("SENSOR")
                 .id(doc.getId())
@@ -403,11 +565,64 @@ public class SearchService {
                 .description(doc.getDescription())
                 .status(doc.getStatus())
                 .relevanceScore(0.7)
+                .highlightedName(enableHighlighting ? SearchUtils.highlightMultiple(doc.getName(), searchTerms) : null)
+                .highlightedDescription(enableHighlighting ? SearchUtils.highlightMultiple(doc.getDescription(), searchTerms) : null)
+                .matchedTerms(SearchUtils.getMatchedTerms(doc.getName() + " " + doc.getDescription(), searchTerms))
+                .isFuzzyMatch(Boolean.TRUE.equals(request.getEnableFuzzySearch()) &&
+                        SearchUtils.isFuzzyMatch(doc.getName(), request.getQuery(), request.getFuzzyMaxEdits()))
                 .metadata(Map.of(
                         "tenantId", doc.getTenantId(),
                         "serialNumber", doc.getSerialNumber(),
                         "sensorType", doc.getSensorType(),
                         "zoneId", doc.getZoneId() != null ? doc.getZoneId() : 0L
+                ))
+                .build();
+    }
+
+    private GlobalSearchResponse.SearchResultItem toSearchResultItem(
+            ReportDocument doc, GlobalSearchRequest request, List<String> searchTerms) {
+        boolean enableHighlighting = Boolean.TRUE.equals(request.getEnableHighlighting());
+
+        return GlobalSearchResponse.SearchResultItem.builder()
+                .entityType("REPORT")
+                .id(doc.getId())
+                .name(doc.getName())
+                .description(doc.getDescription())
+                .status("ACTIVE")
+                .relevanceScore(0.6)
+                .highlightedName(enableHighlighting ? SearchUtils.highlightMultiple(doc.getName(), searchTerms) : null)
+                .highlightedDescription(enableHighlighting ? SearchUtils.highlightMultiple(doc.getDescription(), searchTerms) : null)
+                .matchedTerms(SearchUtils.getMatchedTerms(doc.getName() + " " + doc.getDescription(), searchTerms))
+                .isFuzzyMatch(Boolean.TRUE.equals(request.getEnableFuzzySearch()) &&
+                        SearchUtils.isFuzzyMatch(doc.getName(), request.getQuery(), request.getFuzzyMaxEdits()))
+                .metadata(Map.of(
+                        "tenantId", doc.getTenantId(),
+                        "reportType", doc.getReportType() != null ? doc.getReportType() : "",
+                        "createdBy", doc.getCreatedBy() != null ? doc.getCreatedBy() : ""
+                ))
+                .build();
+    }
+
+    private GlobalSearchResponse.SearchResultItem toSearchResultItem(
+            DashboardDocument doc, GlobalSearchRequest request, List<String> searchTerms) {
+        boolean enableHighlighting = Boolean.TRUE.equals(request.getEnableHighlighting());
+
+        return GlobalSearchResponse.SearchResultItem.builder()
+                .entityType("DASHBOARD")
+                .id(doc.getId())
+                .name(doc.getName())
+                .description(doc.getDescription())
+                .status("ACTIVE")
+                .relevanceScore(0.6)
+                .highlightedName(enableHighlighting ? SearchUtils.highlightMultiple(doc.getName(), searchTerms) : null)
+                .highlightedDescription(enableHighlighting ? SearchUtils.highlightMultiple(doc.getDescription(), searchTerms) : null)
+                .matchedTerms(SearchUtils.getMatchedTerms(doc.getName() + " " + doc.getDescription(), searchTerms))
+                .isFuzzyMatch(Boolean.TRUE.equals(request.getEnableFuzzySearch()) &&
+                        SearchUtils.isFuzzyMatch(doc.getName(), request.getQuery(), request.getFuzzyMaxEdits()))
+                .metadata(Map.of(
+                        "tenantId", doc.getTenantId(),
+                        "dashboardType", doc.getDashboardType() != null ? doc.getDashboardType() : "",
+                        "isShared", doc.getIsShared() != null ? doc.getIsShared().toString() : "false"
                 ))
                 .build();
     }

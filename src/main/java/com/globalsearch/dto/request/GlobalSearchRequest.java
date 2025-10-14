@@ -41,4 +41,20 @@ public class GlobalSearchRequest {
 
     @Builder.Default
     private String sortDirection = "ASC";
+
+    // Advanced search options
+    @Builder.Default
+    private Boolean enableFuzzySearch = false;
+
+    @Builder.Default
+    private Boolean enableSynonyms = false;
+
+    @Builder.Default
+    private Boolean enableHighlighting = false;
+
+    @Builder.Default
+    private Integer fuzzyMaxEdits = 1; // 0, 1, or 2
+
+    @Builder.Default
+    private Integer fuzzyPrefixLength = 1;
 }
