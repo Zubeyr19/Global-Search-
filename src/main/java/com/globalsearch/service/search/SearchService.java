@@ -11,7 +11,9 @@ import com.globalsearch.repository.search.CompanySearchRepository;
 import com.globalsearch.repository.search.LocationSearchRepository;
 import com.globalsearch.repository.search.SensorSearchRepository;
 import com.globalsearch.repository.search.ZoneSearchRepository;
+import com.globalsearch.dto.WebSocketMessage;
 import com.globalsearch.service.AuditLogService;
+import com.globalsearch.service.NotificationService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +35,7 @@ public class SearchService {
     private final ZoneSearchRepository zoneSearchRepository;
     private final SensorSearchRepository sensorSearchRepository;
     private final AuditLogService auditLogService;
+    private final NotificationService notificationService;
 
     /**
      * Global search with document-level security enforcement
@@ -88,7 +91,8 @@ public class SearchService {
                 httpRequest
         );
 
-        return GlobalSearchResponse.builder()
+        // Send real-time notification to user about search completion
+        GlobalSearchResponse response = GlobalSearchResponse.builder()
                 .results(paginatedResults)
                 .totalResults((long) allResults.size())
                 .currentPage(request.getPage())
@@ -96,6 +100,17 @@ public class SearchService {
                 .pageSize(request.getSize())
                 .searchDurationMs(duration)
                 .build();
+
+        // Notify user about search results
+        WebSocketMessage notification = WebSocketMessage.searchResult(
+                currentUser.getTenantId(),
+                String.format("Search completed: Found %d results for '%s' in %dms",
+                        allResults.size(), request.getQuery(), duration),
+                Map.of("totalResults", allResults.size(), "duration", duration)
+        );
+        notificationService.notifyUser(currentUser.getId(), notification);
+
+        return response;
     }
 
     /**
