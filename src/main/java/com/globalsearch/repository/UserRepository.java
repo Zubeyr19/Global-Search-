@@ -32,4 +32,16 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Query("SELECT COUNT(u) FROM User u WHERE u.tenantId = :tenantId")
     long countByTenantId(@Param("tenantId") String tenantId);
+
+    // Admin queries
+    @Query("SELECT DISTINCT u.tenantId FROM User u")
+    List<String> findDistinctTenantIds();
+
+    @Query("SELECT COUNT(DISTINCT u.tenantId) FROM User u")
+    Long countDistinctTenantIds();
+
+    @Query("SELECT u FROM User u WHERE u.tenantId = :tenantId ORDER BY u.createdAt ASC")
+    List<User> findByTenantIdOrderByCreatedAtAsc(@Param("tenantId") String tenantId);
+
+    Optional<User> findFirstByTenantIdOrderByCreatedAtAsc(String tenantId);
 }
