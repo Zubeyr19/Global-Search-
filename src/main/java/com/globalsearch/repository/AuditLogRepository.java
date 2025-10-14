@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
@@ -107,4 +108,20 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
 
     // Delete old audit logs (for cleanup)
     void deleteByTimestampBefore(LocalDateTime date);
+
+    // Admin statistics queries
+    Long countByAction(AuditLog.AuditAction action);
+
+    Long countByTenantIdAndAction(String tenantId, AuditLog.AuditAction action);
+
+    @Query("SELECT COUNT(DISTINCT a.userId) FROM AuditLog a WHERE a.timestamp >= :since")
+    Long countDistinctUsersSince(@Param("since") LocalDateTime since);
+
+    @Query("SELECT a FROM AuditLog a WHERE a.tenantId = :tenantId ORDER BY a.timestamp DESC")
+    List<AuditLog> findByTenantIdOrderByTimestampDesc(@Param("tenantId") String tenantId);
+
+    Optional<AuditLog> findFirstByTenantIdOrderByTimestampDesc(String tenantId);
+
+    @Query("SELECT AVG(a.responseTimeMs) FROM AuditLog a WHERE a.action = :action AND a.responseTimeMs IS NOT NULL")
+    Double getAverageResponseTimeByAction(@Param("action") AuditLog.AuditAction action);
 }

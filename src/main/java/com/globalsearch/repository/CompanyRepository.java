@@ -30,4 +30,11 @@ public interface CompanyRepository extends JpaRepository<Company, Long> {
     @Query("SELECT c FROM Company c WHERE LOWER(c.name) LIKE LOWER(CONCAT('%', :searchTerm, '%')) " +
             "OR LOWER(c.industry) LIKE LOWER(CONCAT('%', :searchTerm, '%'))")
     Page<Company> searchCompanies(@Param("searchTerm") String searchTerm, Pageable pageable);
+
+    // Admin queries
+    Long countByTenantId(String tenantId);
+
+    List<Company> findAllByTenantId(String tenantId);
+
+    Optional<Company> findFirstByTenantId(String tenantId);
 }

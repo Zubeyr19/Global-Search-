@@ -34,4 +34,7 @@ public interface LocationRepository extends JpaRepository<Location, Long> {
 
     @Query("SELECT COUNT(l) FROM Location l WHERE l.company.id = :companyId")
     long countByCompanyId(@Param("companyId") Long companyId);
+
+    @Query("SELECT COUNT(l) FROM Location l WHERE l.company.tenantId = :tenantId")
+    Long countByTenantId(@Param("tenantId") String tenantId);
 }
