@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CompanyDocument {
+public class    CompanyDocument {
 
     @Id
     private Long id;

@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
                 @Index(name = "idx_dashboard_owner", columnList = "owner_id"),
                 @Index(name = "idx_dashboard_shared", columnList = "is_shared")
         })
+@EntityListeners(com.globalsearch.service.EntitySyncListener.class)
 @Data
 @Builder
 @NoArgsConstructor

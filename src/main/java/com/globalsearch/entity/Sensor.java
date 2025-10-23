@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
                 @Index(name = "idx_sensor_type", columnList = "sensor_type"),
                 @Index(name = "idx_sensor_status", columnList = "status")
         })
+@EntityListeners(com.globalsearch.service.EntitySyncListener.class)
 @Data
 @Builder
 @NoArgsConstructor

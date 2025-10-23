@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
                 @Index(name = "idx_report_created", columnList = "created_at"),
                 @Index(name = "idx_report_type", columnList = "report_type")
         })
+@EntityListeners(com.globalsearch.service.EntitySyncListener.class)
 @Data
 @Builder
 @NoArgsConstructor

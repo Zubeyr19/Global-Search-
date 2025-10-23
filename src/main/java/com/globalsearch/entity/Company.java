@@ -16,6 +16,7 @@ import java.util.List;
         indexes = {
                 @Index(name = "idx_company_tenant", columnList = "tenant_id")
         })
+@EntityListeners(com.globalsearch.service.EntitySyncListener.class)
 @Data
 @Builder
 @NoArgsConstructor
