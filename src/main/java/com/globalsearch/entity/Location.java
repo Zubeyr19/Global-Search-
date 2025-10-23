@@ -13,6 +13,7 @@ import java.util.List;
                 @Index(name = "idx_location_company", columnList = "company_id"),
                 @Index(name = "idx_location_name", columnList = "name")
         })
+@EntityListeners(com.globalsearch.service.EntitySyncListener.class)
 @Data
 @Builder
 @NoArgsConstructor
