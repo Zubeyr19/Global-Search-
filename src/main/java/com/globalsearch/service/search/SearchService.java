@@ -8,6 +8,7 @@ import com.globalsearch.repository.search.*;
 import com.globalsearch.dto.WebSocketMessage;
 import com.globalsearch.service.AuditLogService;
 import com.globalsearch.service.NotificationService;
+import com.globalsearch.service.PerformanceMetricsService;
 import com.globalsearch.util.SearchUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +34,7 @@ public class SearchService {
     private final DashboardSearchRepository dashboardSearchRepository;
     private final AuditLogService auditLogService;
     private final NotificationService notificationService;
+    private final PerformanceMetricsService performanceMetricsService;
 
     /**
      * Global search with document-level security enforcement
@@ -93,6 +95,13 @@ public class SearchService {
                 allResults.subList(Math.min(start, allResults.size()), end);
 
         long duration = System.currentTimeMillis() - startTime;
+
+        // Record performance metrics
+        performanceMetricsService.recordQueryExecution(
+                currentUser.getTenantId(),
+                "global_search",
+                duration
+        );
 
         // Log search event for audit trail
         auditLogService.logSearchEvent(
@@ -177,6 +186,13 @@ public class SearchService {
                 allResults.subList(Math.min(start, allResults.size()), end);
 
         long duration = System.currentTimeMillis() - startTime;
+
+        // Record performance metrics
+        performanceMetricsService.recordQueryExecution(
+                admin.getTenantId(),
+                "admin_cross_tenant_search",
+                duration
+        );
 
         // Log admin search event for audit trail
         auditLogService.logSearchEvent(

@@ -67,10 +67,10 @@ public class    CompanyDocument {
     @Field(type = FieldType.Integer)
     private Integer maxSensors;
 
-    @Field(type = FieldType.Date)
+    @Field(type = FieldType.Date, format = {}, pattern = "uuuu-MM-dd['T'HH:mm:ss[.SSS][.SS][.S]]")
     private LocalDateTime createdAt;
 
-    @Field(type = FieldType.Date)
+    @Field(type = FieldType.Date, format = {}, pattern = "uuuu-MM-dd['T'HH:mm:ss[.SSS][.SS][.S]]")
     private LocalDateTime updatedAt;
 
     public static CompanyDocument fromEntity(Company company) {

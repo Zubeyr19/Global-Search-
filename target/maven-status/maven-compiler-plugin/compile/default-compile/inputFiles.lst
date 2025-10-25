@@ -8,7 +8,9 @@ C:\Users\Zubeyr\IdeaProjects\Global-Search-\src\main\java\com\globalsearch\confi
 C:\Users\Zubeyr\IdeaProjects\Global-Search-\src\main\java\com\globalsearch\controller\AuditLogController.java
 C:\Users\Zubeyr\IdeaProjects\Global-Search-\src\main\java\com\globalsearch\controller\auth\AuthController.java
 C:\Users\Zubeyr\IdeaProjects\Global-Search-\src\main\java\com\globalsearch\controller\ElasticsearchSyncController.java
+C:\Users\Zubeyr\IdeaProjects\Global-Search-\src\main\java\com\globalsearch\controller\PerformanceController.java
 C:\Users\Zubeyr\IdeaProjects\Global-Search-\src\main\java\com\globalsearch\controller\PolicyController.java
+C:\Users\Zubeyr\IdeaProjects\Global-Search-\src\main\java\com\globalsearch\controller\search\GlobalSearchController.java
 C:\Users\Zubeyr\IdeaProjects\Global-Search-\src\main\java\com\globalsearch\controller\UserController.java
 C:\Users\Zubeyr\IdeaProjects\Global-Search-\src\main\java\com\globalsearch\controller\WebSocketController.java
 C:\Users\Zubeyr\IdeaProjects\Global-Search-\src\main\java\com\globalsearch\document\CompanyDocument.java
@@ -72,6 +74,7 @@ C:\Users\Zubeyr\IdeaProjects\Global-Search-\src\main\java\com\globalsearch\servi
 C:\Users\Zubeyr\IdeaProjects\Global-Search-\src\main\java\com\globalsearch\service\EntitySyncListener.java
 C:\Users\Zubeyr\IdeaProjects\Global-Search-\src\main\java\com\globalsearch\service\ExportService.java
 C:\Users\Zubeyr\IdeaProjects\Global-Search-\src\main\java\com\globalsearch\service\NotificationService.java
+C:\Users\Zubeyr\IdeaProjects\Global-Search-\src\main\java\com\globalsearch\service\PerformanceMetricsService.java
 C:\Users\Zubeyr\IdeaProjects\Global-Search-\src\main\java\com\globalsearch\service\PolicyService.java
 C:\Users\Zubeyr\IdeaProjects\Global-Search-\src\main\java\com\globalsearch\service\ReportService.java
 C:\Users\Zubeyr\IdeaProjects\Global-Search-\src\main\java\com\globalsearch\service\search\AdvancedSearchService.java
