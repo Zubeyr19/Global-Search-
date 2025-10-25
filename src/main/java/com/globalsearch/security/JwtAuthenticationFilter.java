@@ -1,5 +1,6 @@
 package com.globalsearch.security;
 
+import com.globalsearch.service.auth.CustomUserDetailsService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,6 +25,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final UserDetailsService userDetailsService;
+    private final CustomUserDetailsService customUserDetailsService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -40,8 +42,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
                     if (jwtTokenProvider.validateToken(token, userDetails)) {
+                        // Load the actual User entity to use as principal
+                        com.globalsearch.entity.User userEntity = customUserDetailsService.loadUserEntityByUsername(username);
+
                         UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                                userDetails,
+                                userEntity,  // Use User entity instead of UserDetails
                                 null,
                                 userDetails.getAuthorities()
                         );

@@ -29,7 +29,7 @@ public class ReportDocument {
     private String tenantId;
 
     @Field(type = FieldType.Keyword)
-    private String reportType;
+    private String reportType;  
 
     @Field(type = FieldType.Text)
     private String description;
