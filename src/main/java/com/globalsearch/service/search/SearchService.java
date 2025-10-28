@@ -13,6 +13,8 @@ import com.globalsearch.util.SearchUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -40,8 +42,21 @@ public class SearchService {
      * Global search with document-level security enforcement
      * Users only see data they have access to based on tenantId and roles
      */
-    public GlobalSearchResponse globalSearch(GlobalSearchRequest request, User currentUser, HttpServletRequest httpRequest) {
+
+    @Cacheable(
+            value = "searchResults",
+            key = "#request.query + '_' + #currentUser.tenantId + '_' + #request.page + '_' + #request.size",
+            unless = "#result.totalResults == 0"
+    )
+
+
+    public GlobalSearchResponse globalSearch(
+            GlobalSearchRequest request,
+            User currentUser,
+            HttpServletRequest httpRequest) {
+
         long startTime = System.currentTimeMillis();
+        log.debug("Cache MISS - Executing search for: {}", request.getQuery());
 
         log.debug("Global search for user: {}, tenant: {}, query: {}",
                 currentUser.getUsername(), currentUser.getTenantId(), request.getQuery());
@@ -138,8 +153,14 @@ public class SearchService {
     /**
      * Admin search - can search across all tenants
      */
+
+    @Cacheable(
+            value = "searchResults",
+            key = "'admin_' + #request.query + '_' + #request.page + '_' + #request.size"
+    )
     public GlobalSearchResponse adminGlobalSearch(GlobalSearchRequest request, User admin, HttpServletRequest httpRequest) {
         long startTime = System.currentTimeMillis();
+        log.debug("Cache MISS - Executing admin search for: {}", request.getQuery());
 
         log.debug("Admin global search by: {}, query: {}", admin.getUsername(), request.getQuery());
 
@@ -226,11 +247,11 @@ public class SearchService {
 
             // Apply fuzzy search if enabled
             if (Boolean.TRUE.equals(request.getEnableFuzzySearch())) {
-                List<CompanyDocument> allCompanies = companySearchRepository.findByTenantId(user.getTenantId());
-                for (CompanyDocument company : allCompanies) {
-                    boolean fuzzyMatch = SearchUtils.isFuzzyMatch(
-                            company.getName(), request.getQuery(), request.getFuzzyMaxEdits());
-                    if (fuzzyMatch && !companies.contains(company)) {
+                List<CompanyDocument> fuzzyResults = companySearchRepository
+                        .findByNameFuzzyAndTenantId(request.getQuery(), user.getTenantId());
+
+                for (CompanyDocument company : fuzzyResults) {
+                    if (!companies.contains(company)) {
                         companies.add(company);
                     }
                 }
@@ -426,7 +447,13 @@ public class SearchService {
         if (request.getQuery() != null && !request.getQuery().isEmpty()) {
             companies = companySearchRepository.findByNameContainingIgnoreCase(request.getQuery());
         } else {
-            companies = (List<CompanyDocument>) companySearchRepository.findAll();
+            // Instead of findAll(), use pagination with reasonable limit
+            PageRequest pageRequest = PageRequest.of(
+                request.getPage(),
+                Math.min(request.getSize(), 1000)  // Max 1000 results
+            );
+            Page<CompanyDocument> page = companySearchRepository.findAll(pageRequest);
+            companies = page.getContent();
         }
 
         return companies.stream()
@@ -441,7 +468,13 @@ public class SearchService {
         if (request.getQuery() != null && !request.getQuery().isEmpty()) {
             locations = locationSearchRepository.findByNameContainingIgnoreCase(request.getQuery());
         } else {
-            locations = (List<LocationDocument>) locationSearchRepository.findAll();
+            // Instead of findAll(), use pagination with reasonable limit
+            PageRequest pageRequest = PageRequest.of(
+                request.getPage(),
+                Math.min(request.getSize(), 1000)  // Max 1000 results
+            );
+            Page<LocationDocument> page = locationSearchRepository.findAll(pageRequest);
+            locations = page.getContent();
         }
 
         return locations.stream()
@@ -456,7 +489,13 @@ public class SearchService {
         if (request.getQuery() != null && !request.getQuery().isEmpty()) {
             zones = zoneSearchRepository.findByNameContainingIgnoreCase(request.getQuery());
         } else {
-            zones = (List<ZoneDocument>) zoneSearchRepository.findAll();
+            // Instead of findAll(), use pagination with reasonable limit
+            PageRequest pageRequest = PageRequest.of(
+                request.getPage(),
+                Math.min(request.getSize(), 1000)  // Max 1000 results
+            );
+            Page<ZoneDocument> page = zoneSearchRepository.findAll(pageRequest);
+            zones = page.getContent();
         }
 
         return zones.stream()
@@ -471,7 +510,13 @@ public class SearchService {
         if (request.getQuery() != null && !request.getQuery().isEmpty()) {
             sensors = sensorSearchRepository.findByNameContainingIgnoreCase(request.getQuery());
         } else {
-            sensors = (List<SensorDocument>) sensorSearchRepository.findAll();
+            // Instead of findAll(), use pagination with reasonable limit
+            PageRequest pageRequest = PageRequest.of(
+                request.getPage(),
+                Math.min(request.getSize(), 1000)  // Max 1000 results
+            );
+            Page<SensorDocument> page = sensorSearchRepository.findAll(pageRequest);
+            sensors = page.getContent();
         }
 
         return sensors.stream()
@@ -642,4 +687,5 @@ public class SearchService {
                 ))
                 .build();
     }
+
 }
