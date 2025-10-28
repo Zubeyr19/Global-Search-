@@ -1,6 +1,7 @@
 package com.globalsearch.repository.search;
 
 import com.globalsearch.document.CompanyDocument;
+import org.springframework.data.elasticsearch.annotations.Query;
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
 import org.springframework.stereotype.Repository;
 
@@ -18,4 +19,8 @@ public interface CompanySearchRepository extends ElasticsearchRepository<Company
     List<CompanyDocument> findByStatus(String status);
 
     List<CompanyDocument> findByTenantIdAndNameContainingIgnoreCase(String tenantId, String name);
+
+    //
+    @Query("{\"bool\": {\"must\": [{\"fuzzy\": {\"name\": {\"value\": \"?0\", \"fuzziness\": \"AUTO\"}}}], \"filter\": [{\"term\": {\"tenantId\": \"?1\"}}]}}")
+    List<CompanyDocument> findByNameFuzzyAndTenantId(String name, String tenantId);
 }

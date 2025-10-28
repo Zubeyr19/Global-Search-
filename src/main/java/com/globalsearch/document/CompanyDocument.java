@@ -1,5 +1,6 @@
 package com.globalsearch.document;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.globalsearch.entity.Company;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -67,10 +68,12 @@ public class    CompanyDocument {
     @Field(type = FieldType.Integer)
     private Integer maxSensors;
 
-    @Field(type = FieldType.Date, format = {}, pattern = "uuuu-MM-dd['T'HH:mm:ss[.SSS][.SS][.S]]")
+    @Field(type = FieldType.Date)
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime createdAt;
 
-    @Field(type = FieldType.Date, format = {}, pattern = "uuuu-MM-dd['T'HH:mm:ss[.SSS][.SS][.S]]")
+    @Field(type = FieldType.Date)
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime updatedAt;
 
     public static CompanyDocument fromEntity(Company company) {
