@@ -4,6 +4,7 @@ import com.globalsearch.service.ElasticsearchSyncService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +20,7 @@ import java.util.Map;
 @RequestMapping("/api/admin/elasticsearch")
 @RequiredArgsConstructor
 @Tag(name = "Elasticsearch Sync", description = "Elasticsearch synchronization endpoints")
+@ConditionalOnProperty(name = "elasticsearch.enabled", havingValue = "true", matchIfMissing = false)
 public class ElasticsearchSyncController {
 
     private final ElasticsearchSyncService syncService;

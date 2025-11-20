@@ -52,7 +52,7 @@ public class SecurityConfig {
                         .contentTypeOptions(contentType -> contentType.disable())
                         // Enable XSS protection
                         .xssProtection(xss -> xss
-                                .headerValue(org.springframework.security.web.header.writers.XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK))
+                                .headerValue("1; mode=block"))
                         // HSTS - Force HTTPS (31536000 seconds = 1 year)
                         .httpStrictTransportSecurity(hsts -> hsts
                                 .includeSubDomains(true)

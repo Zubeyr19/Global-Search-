@@ -21,7 +21,7 @@ public class EntitySyncListener {
 
     private static ElasticsearchSyncService syncService;
 
-    @Autowired
+    @Autowired(required = false)
     public void setSyncService(ElasticsearchSyncService syncService) {
         EntitySyncListener.syncService = syncService;
     }

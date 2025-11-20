@@ -41,6 +41,7 @@ public class AuthController {
     private final CustomUserDetailsService userDetailsService;
     private final CompanyRepository companyRepository;
     private final AuditLogService auditLogService;
+    private final com.globalsearch.service.LoginAttemptService loginAttemptService;
 
     @Value("${jwt.expiration:86400000}")
     private long jwtExpiration;
@@ -49,6 +50,18 @@ public class AuthController {
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest loginRequest,
                                    HttpServletRequest request) {
         log.info("Login attempt for user: {}", loginRequest.getUsername());
+
+        // Check if account is locked
+        if (loginAttemptService.isBlocked(loginRequest.getUsername())) {
+            long minutesRemaining = loginAttemptService.getMinutesUntilUnlock(loginRequest.getUsername());
+            log.warn("Login attempt for locked account: {}", loginRequest.getUsername());
+
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Account locked");
+            error.put("message", String.format("Account is temporarily locked due to too many failed login attempts. Try again in %d minutes.", minutesRemaining));
+            error.put("minutesUntilUnlock", minutesRemaining);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+        }
 
         try {
             // Authenticate user
@@ -64,6 +77,9 @@ public class AuthController {
             // Load user details
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
             User user = userDetailsService.loadUserEntityByUsername(loginRequest.getUsername());
+
+            // Record successful login
+            loginAttemptService.loginSucceeded(loginRequest.getUsername());
 
             // Generate tokens
             Map<String, Object> claims = new HashMap<>();
@@ -113,6 +129,9 @@ public class AuthController {
         } catch (BadCredentialsException e) {
             log.error("Invalid credentials for user: {}", loginRequest.getUsername());
 
+            // Record failed login attempt
+            loginAttemptService.loginFailed(loginRequest.getUsername());
+
             // Audit log - failed login
             try {
                 User user = userDetailsService.loadUserEntityByUsername(loginRequest.getUsername());
@@ -120,9 +139,17 @@ public class AuthController {
                         user.getUsername(), user.getTenantId(), request, 401, "Invalid credentials");
             } catch (Exception ignored) {}
 
-            Map<String, String> error = new HashMap<>();
+            Map<String, Object> error = new HashMap<>();
             error.put("error", "Invalid credentials");
-            error.put("message", "Username or password is incorrect");
+
+            int remainingAttempts = loginAttemptService.getRemainingAttempts(loginRequest.getUsername());
+            if (remainingAttempts > 0) {
+                error.put("message", String.format("Username or password is incorrect. %d attempts remaining before account lockout.", remainingAttempts));
+                error.put("remainingAttempts", remainingAttempts);
+            } else {
+                error.put("message", "Invalid credentials. Account has been locked due to too many failed attempts.");
+            }
+
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
 
         } catch (Exception e) {
