@@ -199,10 +199,10 @@ class PasswordValidatorTest {
     @DisplayName("Should reward unique character diversity")
     void testCharacterDiversity() {
         String diversePassword = "A1b2C3d4E5f6!@#$";
-        String lessNDiv密码ePassword = "AAAA1111!!!!";
+        String lessDiversePassword = "AAAA1111!!!!";
 
         PasswordValidator.PasswordStrength diverse = PasswordValidator.calculateStrength(diversePassword);
-        PasswordValidator.PasswordStrength lessDiverse = PasswordValidator.calculateStrength(lessDivPassword);
+        PasswordValidator.PasswordStrength lessDiverse = PasswordValidator.calculateStrength(lessDiversePassword);
 
         assertTrue(diverse.getScore() > lessDiverse.getScore(),
                    "More diverse password should score higher");

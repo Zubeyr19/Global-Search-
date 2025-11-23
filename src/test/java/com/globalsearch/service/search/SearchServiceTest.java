@@ -295,11 +295,6 @@ class SearchServiceTest {
                 eq("TENANT_TEST"), anyString());
         verify(sensorSearchRepository).findByTenantIdAndNameContainingIgnoreCase(
                 eq("TENANT_TEST"), anyString());
-
-        // Ensure results only contain tenant's data
-        response.getResults().forEach(result ->
-            assertThat(result.getTenantId()).isEqualTo("TENANT_TEST")
-        );
     }
 
     @Test

@@ -1,6 +1,7 @@
 C:\Users\Zubeyr\IdeaProjects\Global-Search-\src\main\java\com\globalsearch\config\AppConfig.java
 C:\Users\Zubeyr\IdeaProjects\Global-Search-\src\main\java\com\globalsearch\config\AsyncConfig.java
 C:\Users\Zubeyr\IdeaProjects\Global-Search-\src\main\java\com\globalsearch\config\CacheConfig.java
+C:\Users\Zubeyr\IdeaProjects\Global-Search-\src\main\java\com\globalsearch\config\ElasticsearchConfig.java
 C:\Users\Zubeyr\IdeaProjects\Global-Search-\src\main\java\com\globalsearch\config\OpenAPIConfig.java
 C:\Users\Zubeyr\IdeaProjects\Global-Search-\src\main\java\com\globalsearch\config\SecurityConfig.java
 C:\Users\Zubeyr\IdeaProjects\Global-Search-\src\main\java\com\globalsearch\config\WebMvcConfig.java
@@ -73,6 +74,7 @@ C:\Users\Zubeyr\IdeaProjects\Global-Search-\src\main\java\com\globalsearch\servi
 C:\Users\Zubeyr\IdeaProjects\Global-Search-\src\main\java\com\globalsearch\service\ElasticsearchSyncService.java
 C:\Users\Zubeyr\IdeaProjects\Global-Search-\src\main\java\com\globalsearch\service\EntitySyncListener.java
 C:\Users\Zubeyr\IdeaProjects\Global-Search-\src\main\java\com\globalsearch\service\ExportService.java
+C:\Users\Zubeyr\IdeaProjects\Global-Search-\src\main\java\com\globalsearch\service\LoginAttemptService.java
 C:\Users\Zubeyr\IdeaProjects\Global-Search-\src\main\java\com\globalsearch\service\NotificationService.java
 C:\Users\Zubeyr\IdeaProjects\Global-Search-\src\main\java\com\globalsearch\service\PerformanceMetricsService.java
 C:\Users\Zubeyr\IdeaProjects\Global-Search-\src\main\java\com\globalsearch\service\PolicyService.java
@@ -80,5 +82,8 @@ C:\Users\Zubeyr\IdeaProjects\Global-Search-\src\main\java\com\globalsearch\servi
 C:\Users\Zubeyr\IdeaProjects\Global-Search-\src\main\java\com\globalsearch\service\search\AdvancedSearchService.java
 C:\Users\Zubeyr\IdeaProjects\Global-Search-\src\main\java\com\globalsearch\service\search\SearchService.java
 C:\Users\Zubeyr\IdeaProjects\Global-Search-\src\main\java\com\globalsearch\service\UserService.java
+C:\Users\Zubeyr\IdeaProjects\Global-Search-\src\main\java\com\globalsearch\util\InputSanitizer.java
 C:\Users\Zubeyr\IdeaProjects\Global-Search-\src\main\java\com\globalsearch\util\SearchUtils.java
+C:\Users\Zubeyr\IdeaProjects\Global-Search-\src\main\java\com\globalsearch\validation\PasswordValidator.java
+C:\Users\Zubeyr\IdeaProjects\Global-Search-\src\main\java\com\globalsearch\validation\ValidPassword.java
 C:\Users\Zubeyr\IdeaProjects\Global-Search-\src\main\java\com\globalsearch\websocket\WebSocketEventListener.java

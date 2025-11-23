@@ -30,8 +30,13 @@ public class DataInitializationService implements CommandLineRunner {
             initializeSampleData();
             log.info("Sample data initialized successfully!");
         } else {
-            log.info("Data already exists, skipping initialization");
+            log.info("Data already exists, checking for missing users...");
+            addMissingUsers();
         }
+    }
+
+    private void addMissingUsers() {
+        // No missing users to add - all users are created in initializeSampleData
     }
 
     private void initializeSampleData() {
@@ -92,9 +97,9 @@ public class DataInitializationService implements CommandLineRunner {
                 .build();
         userRepository.save(superAdmin);
 
-        // Create users for Company 1
+        // Create users for Company 1 - Admin and Regular User
         User admin1 = User.builder()
-                .username("admin_logistics")
+                .username("admin")
                 .password(passwordEncoder.encode("password123"))
                 .email("admin@globallogistics.com")
                 .firstName("John")
@@ -106,18 +111,18 @@ public class DataInitializationService implements CommandLineRunner {
                 .build();
         userRepository.save(admin1);
 
-        User manager1 = User.builder()
-                .username("manager_chicago")
+        User regularUser = User.builder()
+                .username("user")
                 .password(passwordEncoder.encode("password123"))
-                .email("manager@globallogistics.com")
-                .firstName("Jane")
-                .lastName("Doe")
+                .email("user@globallogistics.com")
+                .firstName("Bob")
+                .lastName("Williams")
                 .tenantId(company1.getTenantId())
                 .companyId(company1.getId())
-                .roles(Set.of(User.Role.MANAGER))
+                .roles(Set.of(User.Role.OPERATOR))
                 .enabled(true)
                 .build();
-        userRepository.save(manager1);
+        userRepository.save(regularUser);
 
         // Create locations for Company 1
         Location location1 = Location.builder()

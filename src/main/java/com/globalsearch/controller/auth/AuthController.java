@@ -51,17 +51,17 @@ public class AuthController {
                                    HttpServletRequest request) {
         log.info("Login attempt for user: {}", loginRequest.getUsername());
 
-        // Check if account is locked
-        if (loginAttemptService.isBlocked(loginRequest.getUsername())) {
-            long minutesRemaining = loginAttemptService.getMinutesUntilUnlock(loginRequest.getUsername());
-            log.warn("Login attempt for locked account: {}", loginRequest.getUsername());
-
-            Map<String, Object> error = new HashMap<>();
-            error.put("error", "Account locked");
-            error.put("message", String.format("Account is temporarily locked due to too many failed login attempts. Try again in %d minutes.", minutesRemaining));
-            error.put("minutesUntilUnlock", minutesRemaining);
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
-        }
+        // Login attempt tracking disabled for development
+        // if (loginAttemptService.isBlocked(loginRequest.getUsername())) {
+        //     long minutesRemaining = loginAttemptService.getMinutesUntilUnlock(loginRequest.getUsername());
+        //     log.warn("Login attempt for locked account: {}", loginRequest.getUsername());
+        //
+        //     Map<String, Object> error = new HashMap<>();
+        //     error.put("error", "Account locked");
+        //     error.put("message", String.format("Account is temporarily locked due to too many failed login attempts. Try again in %d minutes.", minutesRemaining));
+        //     error.put("minutesUntilUnlock", minutesRemaining);
+        //     return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+        // }
 
         try {
             // Authenticate user
@@ -129,8 +129,8 @@ public class AuthController {
         } catch (BadCredentialsException e) {
             log.error("Invalid credentials for user: {}", loginRequest.getUsername());
 
-            // Record failed login attempt
-            loginAttemptService.loginFailed(loginRequest.getUsername());
+            // Record failed login attempt - DISABLED FOR DEVELOPMENT
+            // loginAttemptService.loginFailed(loginRequest.getUsername());
 
             // Audit log - failed login
             try {
@@ -141,14 +141,7 @@ public class AuthController {
 
             Map<String, Object> error = new HashMap<>();
             error.put("error", "Invalid credentials");
-
-            int remainingAttempts = loginAttemptService.getRemainingAttempts(loginRequest.getUsername());
-            if (remainingAttempts > 0) {
-                error.put("message", String.format("Username or password is incorrect. %d attempts remaining before account lockout.", remainingAttempts));
-                error.put("remainingAttempts", remainingAttempts);
-            } else {
-                error.put("message", "Invalid credentials. Account has been locked due to too many failed attempts.");
-            }
+            error.put("message", "Username or password is incorrect.");
 
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
 

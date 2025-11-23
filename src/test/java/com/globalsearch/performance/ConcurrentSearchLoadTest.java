@@ -482,7 +482,7 @@ public class ConcurrentSearchLoadTest {
 
         // Allow degraded performance during spike (up to 1000ms)
         assertThat(stats.getAverage()).isLessThan(1000);
-        assertThat(successCount.get()).isGreaterThan(spikeUsers * 0.95); // 95% success rate
+        assertThat(successCount.get()).isGreaterThan((int)(spikeUsers * 0.95)); // 95% success rate
 
         System.out.println("✓ Spike load test PASSED");
     }

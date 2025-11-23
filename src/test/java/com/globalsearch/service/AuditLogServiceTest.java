@@ -289,7 +289,7 @@ class AuditLogServiceTest {
         String[] entityTypes = {"Company", "Location", "Zone", "Sensor", "Report", "Dashboard"};
 
         for (String entityType : entityTypes) {
-            auditLogService.logEvent(AuditLog.AuditAction.VIEW, 1L, "testuser",
+            auditLogService.logEvent(AuditLog.AuditAction.READ, 1L, "testuser",
                     "TENANT_001", entityType, 100L, "Test Entity", null, null, httpRequest);
         }
 
