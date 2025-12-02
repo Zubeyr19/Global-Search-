@@ -10,6 +10,7 @@ import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Document(indexName = "dashboards")
@@ -62,10 +63,10 @@ public class DashboardDocument {
     private LocalDateTime lastAccessedAt;
 
     @Field(type = FieldType.Date)
-    private LocalDateTime createdAt;
+    private LocalDate createdAt;
 
     @Field(type = FieldType.Date)
-    private LocalDateTime updatedAt;
+    private LocalDate updatedAt;
 
     public static DashboardDocument fromEntity(Dashboard dashboard) {
         return DashboardDocument.builder()
@@ -83,8 +84,8 @@ public class DashboardDocument {
                 .tags(dashboard.getTags())
                 .accessCount(dashboard.getAccessCount())
                 .lastAccessedAt(dashboard.getLastAccessedAt())
-                .createdAt(dashboard.getCreatedAt())
-                .updatedAt(dashboard.getUpdatedAt())
+                .createdAt(dashboard.getCreatedAt() != null ? dashboard.getCreatedAt().toLocalDate() : null)
+                .updatedAt(dashboard.getUpdatedAt() != null ? dashboard.getUpdatedAt().toLocalDate() : null)
                 .build();
     }
 }

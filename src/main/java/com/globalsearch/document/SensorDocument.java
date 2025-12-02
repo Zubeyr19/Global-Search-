@@ -10,6 +10,7 @@ import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Document(indexName = "sensors")
@@ -84,10 +85,10 @@ public class SensorDocument {
     private String tenantId;
 
     @Field(type = FieldType.Date)
-    private LocalDateTime createdAt;
+    private LocalDate createdAt;
 
     @Field(type = FieldType.Date)
-    private LocalDateTime updatedAt;
+    private LocalDate updatedAt;
 
     public static SensorDocument fromEntity(Sensor sensor) {
         Long locationId = null;
@@ -126,8 +127,8 @@ public class SensorDocument {
                 .locationId(locationId)
                 .companyId(companyId)
                 .tenantId(tenantId)
-                .createdAt(sensor.getCreatedAt())
-                .updatedAt(sensor.getUpdatedAt())
+                .createdAt(sensor.getCreatedAt() != null ? sensor.getCreatedAt().toLocalDate() : null)
+                .updatedAt(sensor.getUpdatedAt() != null ? sensor.getUpdatedAt().toLocalDate() : null)
                 .build();
     }
 }

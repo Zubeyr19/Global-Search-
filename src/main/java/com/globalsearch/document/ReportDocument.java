@@ -10,6 +10,7 @@ import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Document(indexName = "reports")
@@ -47,10 +48,10 @@ public class ReportDocument {
     private Long createdBy;
 
     @Field(type = FieldType.Date)
-    private LocalDateTime createdAt;
+    private LocalDate createdAt;
 
     @Field(type = FieldType.Date)
-    private LocalDateTime updatedAt;
+    private LocalDate updatedAt;
 
     @Field(type = FieldType.Text)
     private String tags;
@@ -81,8 +82,8 @@ public class ReportDocument {
                 .fileSize(report.getFileSize())
                 .mimeType(report.getMimeType())
                 .createdBy(report.getCreatedBy())
-                .createdAt(report.getCreatedAt())
-                .updatedAt(report.getUpdatedAt())
+                .createdAt(report.getCreatedAt() != null ? report.getCreatedAt().toLocalDate() : null)
+                .updatedAt(report.getUpdatedAt() != null ? report.getUpdatedAt().toLocalDate() : null)
                 .tags(report.getTags())
                 .isPublic(report.getIsPublic())
                 .executionTimeMs(report.getExecutionTimeMs())

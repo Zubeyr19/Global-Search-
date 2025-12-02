@@ -11,6 +11,7 @@ import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Document(indexName = "companies")
@@ -69,12 +70,12 @@ public class    CompanyDocument {
     private Integer maxSensors;
 
     @Field(type = FieldType.Date)
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
-    private LocalDateTime createdAt;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+    private LocalDate createdAt;
 
     @Field(type = FieldType.Date)
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
-    private LocalDateTime updatedAt;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+    private LocalDate updatedAt;
 
     public static CompanyDocument fromEntity(Company company) {
         return CompanyDocument.builder()
@@ -94,8 +95,8 @@ public class    CompanyDocument {
                 .maxUsers(company.getMaxUsers())
                 .maxLocations(company.getMaxLocations())
                 .maxSensors(company.getMaxSensors())
-                .createdAt(company.getCreatedAt())
-                .updatedAt(company.getUpdatedAt())
+                .createdAt(company.getCreatedAt() != null ? company.getCreatedAt().toLocalDate() : null)
+                .updatedAt(company.getUpdatedAt() != null ? company.getUpdatedAt().toLocalDate() : null)
                 .build();
     }
 }

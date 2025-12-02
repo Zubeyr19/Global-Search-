@@ -63,6 +63,18 @@ public class SearchService {
         log.debug("Global search for user: {}, tenant: {}, query: {}",
                 currentUser.getUsername(), currentUser.getTenantId(), request.getQuery());
 
+        // Check if user is SUPER_ADMIN or tenant is SYSTEM - they should search across all tenants
+        boolean isSuperAdmin = currentUser.hasRole(User.Role.SUPER_ADMIN) || "SYSTEM".equals(currentUser.getTenantId());
+
+        log.info("User: {}, Tenant: {}, Has SUPER_ADMIN role: {}, Tenant is SYSTEM: {}, isSuperAdmin: {}",
+                 currentUser.getUsername(), currentUser.getTenantId(),
+                 currentUser.hasRole(User.Role.SUPER_ADMIN), "SYSTEM".equals(currentUser.getTenantId()), isSuperAdmin);
+
+        if (isSuperAdmin) {
+            log.info("SUPER_ADMIN detected - routing to cross-tenant search for user: {}", currentUser.getUsername());
+            return adminGlobalSearch(request, currentUser, httpRequest);
+        }
+
         // Create pageable
         Pageable pageable = createPageable(request);
 
@@ -198,6 +210,14 @@ public class SearchService {
 
         if (shouldSearchEntity(request, "sensors")) {
             allResults.addAll(adminSearchSensors(request, searchTerms));
+        }
+
+        if (shouldSearchEntity(request, "reports")) {
+            allResults.addAll(adminSearchReports(request, searchTerms));
+        }
+
+        if (shouldSearchEntity(request, "dashboards")) {
+            allResults.addAll(adminSearchDashboards(request, searchTerms));
         }
 
         // Sort and paginate
@@ -522,6 +542,48 @@ public class SearchService {
         }
 
         return sensors.stream()
+                .map(doc -> toSearchResultItem(doc, request, searchTerms))
+                .collect(Collectors.toList());
+    }
+
+    private List<GlobalSearchResponse.SearchResultItem> adminSearchReports(
+            GlobalSearchRequest request, List<String> searchTerms) {
+        List<ReportDocument> reports;
+
+        if (request.getQuery() != null && !request.getQuery().isEmpty()) {
+            reports = reportSearchRepository.findByNameContainingIgnoreCase(request.getQuery());
+        } else {
+            // Instead of findAll(), use pagination with reasonable limit
+            PageRequest pageRequest = PageRequest.of(
+                request.getPage(),
+                Math.min(request.getSize(), 1000)  // Max 1000 results
+            );
+            Page<ReportDocument> page = reportSearchRepository.findAll(pageRequest);
+            reports = page.getContent();
+        }
+
+        return reports.stream()
+                .map(doc -> toSearchResultItem(doc, request, searchTerms))
+                .collect(Collectors.toList());
+    }
+
+    private List<GlobalSearchResponse.SearchResultItem> adminSearchDashboards(
+            GlobalSearchRequest request, List<String> searchTerms) {
+        List<DashboardDocument> dashboards;
+
+        if (request.getQuery() != null && !request.getQuery().isEmpty()) {
+            dashboards = dashboardSearchRepository.findByNameContainingIgnoreCase(request.getQuery());
+        } else {
+            // Instead of findAll(), use pagination with reasonable limit
+            PageRequest pageRequest = PageRequest.of(
+                request.getPage(),
+                Math.min(request.getSize(), 1000)  // Max 1000 results
+            );
+            Page<DashboardDocument> page = dashboardSearchRepository.findAll(pageRequest);
+            dashboards = page.getContent();
+        }
+
+        return dashboards.stream()
                 .map(doc -> toSearchResultItem(doc, request, searchTerms))
                 .collect(Collectors.toList());
     }

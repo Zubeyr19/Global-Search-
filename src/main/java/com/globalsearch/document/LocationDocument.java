@@ -12,6 +12,7 @@ import org.springframework.data.elasticsearch.annotations.FieldType;
 import org.springframework.data.elasticsearch.annotations.GeoPointField;
 import org.springframework.data.elasticsearch.core.geo.GeoPoint;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Document(indexName = "locations")
@@ -77,10 +78,10 @@ public class LocationDocument {
     private String tenantId;
 
     @Field(type = FieldType.Date)
-    private LocalDateTime createdAt;
+    private LocalDate createdAt;
 
     @Field(type = FieldType.Date)
-    private LocalDateTime updatedAt;
+    private LocalDate updatedAt;
 
     public static LocationDocument fromEntity(Location location) {
         GeoPoint geoPoint = null;
@@ -107,8 +108,8 @@ public class LocationDocument {
                 .managerPhone(location.getManagerPhone())
                 .companyId(location.getCompany() != null ? location.getCompany().getId() : null)
                 .tenantId(location.getCompany() != null ? location.getCompany().getTenantId() : null)
-                .createdAt(location.getCreatedAt())
-                .updatedAt(location.getUpdatedAt())
+                .createdAt(location.getCreatedAt() != null ? location.getCreatedAt().toLocalDate() : null)
+                .updatedAt(location.getUpdatedAt() != null ? location.getUpdatedAt().toLocalDate() : null)
                 .build();
     }
 }

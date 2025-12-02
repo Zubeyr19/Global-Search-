@@ -10,6 +10,7 @@ import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Document(indexName = "zones")
@@ -66,10 +67,10 @@ public class ZoneDocument {
     private String tenantId;
 
     @Field(type = FieldType.Date)
-    private LocalDateTime createdAt;
+    private LocalDate createdAt;
 
     @Field(type = FieldType.Date)
-    private LocalDateTime updatedAt;
+    private LocalDate updatedAt;
 
     public static ZoneDocument fromEntity(Zone zone) {
         Long companyId = null;
@@ -95,8 +96,8 @@ public class ZoneDocument {
                 .locationId(zone.getLocation() != null ? zone.getLocation().getId() : null)
                 .companyId(companyId)
                 .tenantId(tenantId)
-                .createdAt(zone.getCreatedAt())
-                .updatedAt(zone.getUpdatedAt())
+                .createdAt(zone.getCreatedAt() != null ? zone.getCreatedAt().toLocalDate() : null)
+                .updatedAt(zone.getUpdatedAt() != null ? zone.getUpdatedAt().toLocalDate() : null)
                 .build();
     }
 }
