@@ -22,6 +22,7 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.lenient;
 
 /**
  * Unit tests for ElasticsearchSyncService
@@ -234,11 +235,11 @@ class ElasticsearchSyncServiceTest {
     void testSyncAllDataOnStartup_HandlesPartialFailure() {
         // Given - Setup so that company sync fails but location sync succeeds
         when(companyRepository.findAll()).thenThrow(new RuntimeException("Database connection lost"));
-        when(locationRepository.findAll()).thenReturn(Arrays.asList(testLocation));
-        when(zoneRepository.findAll()).thenReturn(Collections.emptyList());
-        when(sensorRepository.findAll()).thenReturn(Collections.emptyList());
-        when(reportRepository.findAll()).thenReturn(Collections.emptyList());
-        when(dashboardRepository.findAll()).thenReturn(Collections.emptyList());
+        lenient().when(locationRepository.findAll()).thenReturn(Arrays.asList(testLocation));
+        lenient().when(zoneRepository.findAll()).thenReturn(Collections.emptyList());
+        lenient().when(sensorRepository.findAll()).thenReturn(Collections.emptyList());
+        lenient().when(reportRepository.findAll()).thenReturn(Collections.emptyList());
+        lenient().when(dashboardRepository.findAll()).thenReturn(Collections.emptyList());
 
         // When
         syncService.syncAllDataOnStartup();
@@ -331,11 +332,15 @@ class ElasticsearchSyncServiceTest {
 
         when(sensorRepository.findAll()).thenReturn(Arrays.asList(sensor1, sensor2, sensor3));
 
-        // Make second save throw exception
-        doNothing().when(sensorSearchRepository).save(argThat(doc -> doc.getId().equals(1L)));
-        doThrow(new RuntimeException("Indexing failed")).when(sensorSearchRepository)
-                .save(argThat(doc -> doc.getId().equals(2L)));
-        doNothing().when(sensorSearchRepository).save(argThat(doc -> doc.getId().equals(3L)));
+        // Make second save throw exception using a counter approach
+        final int[] callCount = {0};
+        when(sensorSearchRepository.save(any(SensorDocument.class))).thenAnswer(invocation -> {
+            callCount[0]++;
+            if (callCount[0] == 2) {
+                throw new RuntimeException("Indexing failed");
+            }
+            return invocation.getArgument(0);
+        });
 
         // When
         syncService.syncAllSensors();

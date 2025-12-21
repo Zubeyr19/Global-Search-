@@ -1,19 +1,20 @@
 package com.globalsearch.repository.search;
 
+import com.globalsearch.annotation.ElasticsearchTest;
 import com.globalsearch.document.CompanyDocument;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.data.elasticsearch.DataElasticsearchTest;
-import org.springframework.test.context.ActiveProfiles;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@DataElasticsearchTest
-@ActiveProfiles("test")
+/**
+ * Integration tests for CompanySearchRepository using Testcontainers Elasticsearch
+ */
+@ElasticsearchTest
 class CompanySearchRepositoryIntegrationTest {
 
     @Autowired
@@ -33,8 +34,8 @@ class CompanySearchRepositoryIntegrationTest {
                 .tenantId("TENANT_001")
                 .industry("Technology")
                 .status("ACTIVE")
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
+                .createdAt(LocalDateTime.now().toLocalDate())
+                .updatedAt(LocalDateTime.now().toLocalDate())
                 .build();
 
         // When
@@ -55,8 +56,8 @@ class CompanySearchRepositoryIntegrationTest {
                 .name("Company 1")
                 .tenantId("TENANT_A")
                 .status("ACTIVE")
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
+                .createdAt(LocalDateTime.now().toLocalDate())
+                .updatedAt(LocalDateTime.now().toLocalDate())
                 .build();
 
         CompanyDocument company2 = CompanyDocument.builder()
@@ -64,8 +65,8 @@ class CompanySearchRepositoryIntegrationTest {
                 .name("Company 2")
                 .tenantId("TENANT_A")
                 .status("ACTIVE")
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
+                .createdAt(LocalDateTime.now().toLocalDate())
+                .updatedAt(LocalDateTime.now().toLocalDate())
                 .build();
 
         CompanyDocument company3 = CompanyDocument.builder()
@@ -73,8 +74,8 @@ class CompanySearchRepositoryIntegrationTest {
                 .name("Company 3")
                 .tenantId("TENANT_B")
                 .status("ACTIVE")
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
+                .createdAt(LocalDateTime.now().toLocalDate())
+                .updatedAt(LocalDateTime.now().toLocalDate())
                 .build();
 
         repository.saveAll(List.of(company1, company2, company3));
@@ -97,8 +98,8 @@ class CompanySearchRepositoryIntegrationTest {
                 .name("Tech Solutions Inc")
                 .tenantId("TENANT_001")
                 .status("ACTIVE")
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
+                .createdAt(LocalDateTime.now().toLocalDate())
+                .updatedAt(LocalDateTime.now().toLocalDate())
                 .build();
 
         CompanyDocument company2 = CompanyDocument.builder()
@@ -106,8 +107,8 @@ class CompanySearchRepositoryIntegrationTest {
                 .name("Healthcare Technologies")
                 .tenantId("TENANT_002")
                 .status("ACTIVE")
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
+                .createdAt(LocalDateTime.now().toLocalDate())
+                .updatedAt(LocalDateTime.now().toLocalDate())
                 .build();
 
         repository.saveAll(List.of(company1, company2));
@@ -129,8 +130,8 @@ class CompanySearchRepositoryIntegrationTest {
                 .name("Tech Corp")
                 .tenantId("TENANT_A")
                 .status("ACTIVE")
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
+                .createdAt(LocalDateTime.now().toLocalDate())
+                .updatedAt(LocalDateTime.now().toLocalDate())
                 .build();
 
         CompanyDocument company2 = CompanyDocument.builder()
@@ -138,8 +139,8 @@ class CompanySearchRepositoryIntegrationTest {
                 .name("Tech Industries")
                 .tenantId("TENANT_B")
                 .status("ACTIVE")
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
+                .createdAt(LocalDateTime.now().toLocalDate())
+                .updatedAt(LocalDateTime.now().toLocalDate())
                 .build();
 
         repository.saveAll(List.of(company1, company2));
@@ -161,8 +162,8 @@ class CompanySearchRepositoryIntegrationTest {
                 .name("Active Company")
                 .tenantId("TENANT_001")
                 .status("ACTIVE")
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
+                .createdAt(LocalDateTime.now().toLocalDate())
+                .updatedAt(LocalDateTime.now().toLocalDate())
                 .build();
 
         CompanyDocument inactiveCompany = CompanyDocument.builder()
@@ -170,8 +171,8 @@ class CompanySearchRepositoryIntegrationTest {
                 .name("Inactive Company")
                 .tenantId("TENANT_002")
                 .status("INACTIVE")
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
+                .createdAt(LocalDateTime.now().toLocalDate())
+                .updatedAt(LocalDateTime.now().toLocalDate())
                 .build();
 
         repository.saveAll(List.of(activeCompany, inactiveCompany));
@@ -195,8 +196,8 @@ class CompanySearchRepositoryIntegrationTest {
                 .name("Test Company")
                 .tenantId("TENANT_001")
                 .status("ACTIVE")
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
+                .createdAt(LocalDateTime.now().toLocalDate())
+                .updatedAt(LocalDateTime.now().toLocalDate())
                 .build();
 
         repository.save(company);

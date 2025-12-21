@@ -1,0 +1,67 @@
+version: '3.8'
+
+# Development-only Docker Compose
+# Run MySQL and Elasticsearch, but develop Spring Boot app locally
+
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.3.0
+    container_name: global-search-mysql-dev
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: global_search_db
+      MYSQL_USER: globaluser
+      MYSQL_PASSWORD: globalpass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_dev_data:/var/lib/mysql
+      - ./database-indexes.sql:/docker-entrypoint-initdb.d/indexes.sql
+    networks:
+      - global-search-dev-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  # Elasticsearch
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.2
+    container_name: global-search-elasticsearch-dev
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - bootstrap.memory_lock=true
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - elasticsearch_dev_data:/usr/share/elasticsearch/data
+    networks:
+      - global-search-dev-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+
+networks:
+  global-search-dev-network:
+    driver: bridge
+
+volumes:
+  mysql_dev_data:
+    driver: local
+  elasticsearch_dev_data:
+    driver: local

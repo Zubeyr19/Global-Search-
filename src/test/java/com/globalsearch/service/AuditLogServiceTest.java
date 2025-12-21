@@ -15,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.lenient;
 
 /**
  * Unit tests for AuditLogService
@@ -37,12 +38,12 @@ class AuditLogServiceTest {
 
     @BeforeEach
     void setUp() {
-        // Setup common request mocks
-        when(httpRequest.getHeader("User-Agent"))
+        // Setup common request mocks - using lenient() to allow tests that don't use httpRequest
+        lenient().when(httpRequest.getHeader("User-Agent"))
                 .thenReturn("Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
-        when(httpRequest.getMethod()).thenReturn("POST");
-        when(httpRequest.getRequestURI()).thenReturn("/api/search");
-        when(httpRequest.getRemoteAddr()).thenReturn("192.168.1.100");
+        lenient().when(httpRequest.getMethod()).thenReturn("POST");
+        lenient().when(httpRequest.getRequestURI()).thenReturn("/api/search");
+        lenient().when(httpRequest.getRemoteAddr()).thenReturn("192.168.1.100");
     }
 
     @Test

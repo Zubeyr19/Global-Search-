@@ -9,6 +9,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Set;
 
 @Service
@@ -36,7 +37,126 @@ public class DataInitializationService implements CommandLineRunner {
     }
 
     private void addMissingUsers() {
-        // No missing users to add - all users are created in initializeSampleData
+        // Update existing sensors with missing dates
+        updateSensorDates();
+
+        // Add missing company data for multi-tenant demo
+        addMissingCompanyData();
+    }
+
+    private void updateSensorDates() {
+        log.info("Checking and updating sensor dates...");
+        var sensors = sensorRepository.findAll();
+        int updated = 0;
+        for (var sensor : sensors) {
+            boolean needsUpdate = false;
+            if (sensor.getInstallationDate() == null) {
+                sensor.setInstallationDate(LocalDateTime.now().minusMonths(6));
+                needsUpdate = true;
+            }
+            if (sensor.getLastReadingTime() == null && sensor.getLastReadingValue() != null) {
+                sensor.setLastReadingTime(LocalDateTime.now().minusMinutes(5));
+                needsUpdate = true;
+            }
+            if (needsUpdate) {
+                sensorRepository.save(sensor);
+                updated++;
+            }
+        }
+        if (updated > 0) {
+            log.info("Updated {} sensors with missing dates", updated);
+        }
+    }
+
+    private void addMissingCompanyData() {
+        // Check if Company 2 exists but doesn't have locations
+        var companies = companyRepository.findAll();
+        Company company2 = null;
+
+        for (var company : companies) {
+            if ("TENANT_MANUFACTURING".equals(company.getTenantId())) {
+                company2 = company;
+                break;
+            }
+        }
+
+        // If Company 2 doesn't exist, create it
+        if (company2 == null) {
+            log.info("Adding TechManufacturing Corp (TENANT_MANUFACTURING)...");
+            company2 = Company.builder()
+                    .name("TechManufacturing Corp")
+                    .tenantId("TENANT_MANUFACTURING")
+                    .industry("Manufacturing")
+                    .description("High-tech manufacturing company")
+                    .contactEmail("admin@techmanufacturing.com")
+                    .contactPhone("+1-555-0200")
+                    .address("200 Industrial Park")
+                    .city("Detroit")
+                    .state("MI")
+                    .country("USA")
+                    .postalCode("48201")
+                    .status(Company.CompanyStatus.ACTIVE)
+                    .maxUsers(30)
+                    .maxLocations(5)
+                    .maxSensors(300)
+                    .build();
+            company2 = companyRepository.save(company2);
+            log.info("✅ Created TechManufacturing Corp");
+        }
+
+        // Check if Company 2 has any locations
+        final Long company2Id = company2.getId();
+        long locationCount = locationRepository.findAll().stream()
+                .filter(loc -> loc.getCompany().getId().equals(company2Id))
+                .count();
+
+        if (locationCount == 0) {
+            log.info("Adding location for TechManufacturing Corp...");
+
+            // Create location for Company 2
+            Location location3 = Location.builder()
+                    .name("Detroit Manufacturing Plant")
+                    .type("factory")
+                    .address("200 Industrial Park")
+                    .city("Detroit")
+                    .state("MI")
+                    .country("USA")
+                    .postalCode("48201")
+                    .latitude(42.3314)
+                    .longitude(-83.0458)
+                    .description("Primary manufacturing facility")
+                    .totalArea(15000.0)
+                    .company(company2)
+                    .status(Location.LocationStatus.ACTIVE)
+                    .managerName("Mike Johnson")
+                    .managerEmail("mike.johnson@techmanufacturing.com")
+                    .build();
+            location3 = locationRepository.save(location3);
+
+            // Create zone for Company 2
+            Zone zone3 = Zone.builder()
+                    .name("Assembly Line A")
+                    .type("production")
+                    .description("Main assembly line")
+                    .floorNumber(1)
+                    .areaSize(2000.0)
+                    .location(location3)
+                    .status(Zone.ZoneStatus.ACTIVE)
+                    .temperatureMin(18.0)
+                    .temperatureMax(24.0)
+                    .humidityMin(35.0)
+                    .humidityMax(55.0)
+                    .alertEnabled(true)
+                    .build();
+            zone3 = zoneRepository.save(zone3);
+
+            log.info("✅ Added Detroit Manufacturing Plant for multi-tenant demo");
+            log.info("Total companies: {}, locations: {}, zones: {}",
+                    companyRepository.count(), locationRepository.count(), zoneRepository.count());
+        } else {
+            log.info("Multi-tenant data already complete: {} companies, {} locations",
+                    companyRepository.count(), locationRepository.count());
+        }
     }
 
     private void initializeSampleData() {
@@ -205,11 +325,14 @@ public class DataInitializationService implements CommandLineRunner {
                 .zone(zone1)
                 .status(Sensor.SensorStatus.ACTIVE)
                 .lastReadingValue(22.5)
+                .lastReadingTime(LocalDateTime.now().minusMinutes(5))
                 .unitOfMeasurement("°C")
                 .readingInterval(60)
                 .alertThresholdMin(15.0)
                 .alertThresholdMax(25.0)
                 .batteryLevel(85)
+                .installationDate(LocalDateTime.now().minusMonths(6))
+                .lastMaintenanceDate(LocalDateTime.now().minusMonths(1))
                 .build();
         sensorRepository.save(sensor1);
 
@@ -223,11 +346,13 @@ public class DataInitializationService implements CommandLineRunner {
                 .zone(zone1)
                 .status(Sensor.SensorStatus.ACTIVE)
                 .lastReadingValue(45.0)
+                .lastReadingTime(LocalDateTime.now().minusMinutes(3))
                 .unitOfMeasurement("%")
                 .readingInterval(60)
                 .alertThresholdMin(30.0)
                 .alertThresholdMax(60.0)
                 .batteryLevel(90)
+                .installationDate(LocalDateTime.now().minusMonths(6))
                 .build();
         sensorRepository.save(sensor2);
 
@@ -241,9 +366,11 @@ public class DataInitializationService implements CommandLineRunner {
                 .zone(zone1)
                 .status(Sensor.SensorStatus.ACTIVE)
                 .lastReadingValue(0.0) // 0 = closed, 1 = open
+                .lastReadingTime(LocalDateTime.now().minusMinutes(1))
                 .unitOfMeasurement("state")
                 .readingInterval(10)
                 .batteryLevel(95)
+                .installationDate(LocalDateTime.now().minusMonths(3))
                 .build();
         sensorRepository.save(sensor3);
 
@@ -258,13 +385,95 @@ public class DataInitializationService implements CommandLineRunner {
                 .zone(zone2)
                 .status(Sensor.SensorStatus.ACTIVE)
                 .lastReadingValue(4.5)
+                .lastReadingTime(LocalDateTime.now().minusMinutes(2))
                 .unitOfMeasurement("°C")
                 .readingInterval(30)
                 .alertThresholdMin(2.0)
                 .alertThresholdMax(8.0)
                 .batteryLevel(75)
+                .installationDate(LocalDateTime.now().minusMonths(8))
+                .lastMaintenanceDate(LocalDateTime.now().minusWeeks(2))
                 .build();
         sensorRepository.save(sensor4);
+
+        // Create locations for Company 2 (Manufacturing)
+        Location location3 = Location.builder()
+                .name("Detroit Manufacturing Plant")
+                .type("factory")
+                .address("200 Industrial Park")
+                .city("Detroit")
+                .state("MI")
+                .country("USA")
+                .postalCode("48201")
+                .latitude(42.3314)
+                .longitude(-83.0458)
+                .description("Primary manufacturing facility")
+                .totalArea(15000.0)
+                .company(company2)
+                .status(Location.LocationStatus.ACTIVE)
+                .managerName("Mike Johnson")
+                .managerEmail("mike.johnson@techmanufacturing.com")
+                .build();
+        location3 = locationRepository.save(location3);
+
+        // Create zones for Location 3
+        Zone zone3 = Zone.builder()
+                .name("Assembly Line A")
+                .type("production")
+                .description("Main assembly line")
+                .floorNumber(1)
+                .areaSize(2000.0)
+                .location(location3)
+                .status(Zone.ZoneStatus.ACTIVE)
+                .temperatureMin(18.0)
+                .temperatureMax(24.0)
+                .humidityMin(35.0)
+                .humidityMax(55.0)
+                .alertEnabled(true)
+                .build();
+        zone3 = zoneRepository.save(zone3);
+
+        // Create sensors for Manufacturing
+        Sensor sensor5 = Sensor.builder()
+                .name("Pressure Sensor - Assembly Line A")
+                .serialNumber("PRESS-001-ASMA")
+                .sensorType(Sensor.SensorType.PRESSURE)
+                .manufacturer("IndustrialSense")
+                .model("IS-PRESS-300")
+                .description("Monitors air pressure in assembly line")
+                .zone(zone3)
+                .status(Sensor.SensorStatus.ACTIVE)
+                .lastReadingValue(101.3)
+                .lastReadingTime(LocalDateTime.now().minusMinutes(1))
+                .unitOfMeasurement("kPa")
+                .readingInterval(30)
+                .alertThresholdMin(95.0)
+                .alertThresholdMax(105.0)
+                .batteryLevel(88)
+                .installationDate(LocalDateTime.now().minusMonths(12))
+                .lastMaintenanceDate(LocalDateTime.now().minusMonths(3))
+                .build();
+        sensorRepository.save(sensor5);
+
+        Sensor sensor6 = Sensor.builder()
+                .name("Vibration Sensor - Assembly Line A")
+                .serialNumber("VIB-001-ASMA")
+                .sensorType(Sensor.SensorType.VIBRATION)
+                .manufacturer("IndustrialSense")
+                .model("IS-VIB-200")
+                .description("Detects abnormal vibrations")
+                .zone(zone3)
+                .status(Sensor.SensorStatus.ACTIVE)
+                .lastReadingValue(0.5)
+                .lastReadingTime(LocalDateTime.now().minusSeconds(45))
+                .unitOfMeasurement("mm/s")
+                .readingInterval(15)
+                .alertThresholdMin(0.0)
+                .alertThresholdMax(2.0)
+                .batteryLevel(92)
+                .installationDate(LocalDateTime.now().minusMonths(10))
+                .build();
+        sensorRepository.save(sensor6);
 
         // Log summary
         log.info("Created {} companies", companyRepository.count());
@@ -274,8 +483,8 @@ public class DataInitializationService implements CommandLineRunner {
         log.info("Created {} sensors", sensorRepository.count());
 
         log.info("=== Sample Login Credentials ===");
-        log.info("Super Admin: username=superadmin, password=admin123");
-        log.info("Company Admin: username=admin_logistics, password=password123");
-        log.info("Manager: username=manager_chicago, password=password123");
+        log.info("Super Admin: username=superadmin, password=admin123 (Sees ALL data)");
+        log.info("Company Admin (TENANT_LOGISTICS): username=admin, password=password123");
+        log.info("Regular User (TENANT_LOGISTICS): username=user, password=password123");
     }
 }

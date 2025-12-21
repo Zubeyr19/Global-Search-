@@ -26,9 +26,10 @@ public class InputSanitizer {
 
     // SQL injection patterns
     private static final Pattern SQL_INJECTION_PATTERN = Pattern.compile(
-        "(\\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|EXECUTE|UNION|DECLARE)\\b)" +
+        "(\\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|EXECUTE|UNION|DECLARE|FROM|WHERE|OR|AND|TABLE)\\b)" +
         "|(-{2})|(/\\*.*?\\*/)" +
-        "|(;\\s*(DROP|DELETE|UPDATE|INSERT))",
+        "|(;\\s*(DROP|DELETE|UPDATE|INSERT))" +
+        "|(\\bOR\\s+\\w+\\s*=\\s*\\w+)|('.*--)",
         Pattern.CASE_INSENSITIVE
     );
 
@@ -127,14 +128,20 @@ public class InputSanitizer {
             return filename;
         }
 
-        // Remove path separators
-        filename = filename.replaceAll("[/\\\\]", "");
-
         // Remove null bytes
         filename = filename.replace("\0", "");
 
+        // Remove consecutive dots (path traversal attempt) - do this BEFORE removing separators
+        filename = filename.replaceAll("\\.{2,}", "");
+
+        // Replace path separators with underscore
+        filename = filename.replaceAll("[/\\\\]", "_");
+
         // Keep only safe characters
         filename = filename.replaceAll("[^a-zA-Z0-9._-]", "_");
+
+        // Remove leading/trailing underscores
+        filename = filename.replaceAll("^_+|_+$", "");
 
         return filename;
     }

@@ -84,6 +84,8 @@ class SearchServiceTest {
                 .query("Tech")
                 .page(0)
                 .size(20)
+                .enableFuzzySearch(false)  // Disable fuzzy search for tests
+                .enableSynonyms(false)     // Disable synonyms for tests
                 .build();
     }
 
@@ -97,7 +99,7 @@ class SearchServiceTest {
                 .description("Technology company")
                 .industry("Technology")
                 .status("ACTIVE")
-                .createdAt(LocalDateTime.now())
+                .createdAt(LocalDateTime.now().toLocalDate())
                 .build();
 
         when(companySearchRepository.findByTenantIdAndNameContainingIgnoreCase(
@@ -170,23 +172,25 @@ class SearchServiceTest {
                 .name("Tech Solutions")
                 .tenantId("TENANT_TEST")
                 .status("ACTIVE")
-                .createdAt(LocalDateTime.now())
+                .createdAt(LocalDateTime.now().toLocalDate())
                 .build();
 
         LocationDocument location = LocationDocument.builder()
                 .id(2L)
                 .name("Tech Building")
                 .tenantId("TENANT_TEST")
+                .companyId(1L)  // Required field for Map.of() in toSearchResultItem
                 .city("Copenhagen")
                 .country("Denmark")
                 .status("ACTIVE")
-                .createdAt(LocalDateTime.now())
+                .createdAt(LocalDateTime.now().toLocalDate())
                 .build();
 
         SensorDocument sensor = SensorDocument.builder()
                 .id(3L)
                 .name("Tech Sensor A1")
                 .tenantId("TENANT_TEST")
+                .serialNumber("SN-001")  // Required field for Map.of() in toSearchResultItem
                 .sensorType("TEMPERATURE")
                 .status("ACTIVE")
                 .build();
@@ -386,7 +390,7 @@ class SearchServiceTest {
                 .tenantId("TENANT_TEST")
                 .status("ACTIVE")
                 .industry("Technology")
-                .createdAt(LocalDateTime.now())
+                .createdAt(LocalDateTime.now().toLocalDate())
                 .build();
     }
 
@@ -395,10 +399,11 @@ class SearchServiceTest {
                 .id(id)
                 .name(name)
                 .tenantId("TENANT_TEST")
+                .companyId(1L)  // Required field for Map.of() in toSearchResultItem
                 .city("Copenhagen")
                 .country("Denmark")
                 .status("ACTIVE")
-                .createdAt(LocalDateTime.now())
+                .createdAt(LocalDateTime.now().toLocalDate())
                 .build();
     }
 }

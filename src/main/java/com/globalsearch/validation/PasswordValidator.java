@@ -125,6 +125,12 @@ public class PasswordValidator implements ConstraintValidator<ValidPassword, Str
         if (password.length() >= 12) score += 10;
         if (password.length() >= 16) score += 5;
 
+        // Penalty for being too short
+        if (password.length() < 8) {
+            score -= 20;
+            suggestions.add("Password should be at least 8 characters");
+        }
+
         // Character variety (max 40 points)
         if (UPPERCASE_PATTERN.matcher(password).find()) {
             score += 10;

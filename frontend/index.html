@@ -646,6 +646,7 @@
                 const data = await response.json();
 
                 if (response.ok) {
+                    data.query = query; // Add query to data for highlighting
                     displayResults(data);
                 } else {
                     resultsList.innerHTML = `<div class="alert alert-error">${data.error || 'Search failed'}</div>`;
@@ -667,21 +668,24 @@
                 return;
             }
 
-            resultsCount.textContent = `${data.totalResults || data.results.length} results found in ${data.searchTimeMs}ms`;
+            resultsCount.textContent = `${data.totalResults || data.results.length} results found in ${data.searchDurationMs}ms`;
 
             resultsList.innerHTML = data.results.map(result => `
                 <div class="result-item">
                     <span class="result-type">${result.entityType || 'Unknown'}</span>
-                    <div class="result-title">${highlightText(result.title || 'Untitled', data.query)}</div>
+                    <div class="result-title">${highlightText(result.name || 'Untitled', data.query)}</div>
                     <div class="result-description">${highlightText(result.description || 'No description available', data.query)}</div>
                     <div class="result-meta">
                         <div class="result-meta-item">
-                            <strong>ID:</strong> ${result.entityId || '-'}
+                            <strong>ID:</strong> ${result.id || '-'}
                         </div>
                         <div class="result-meta-item">
-                            <strong>Score:</strong> ${result.score ? result.score.toFixed(2) : '-'}
+                            <strong>Tenant:</strong> ${result.metadata?.tenantId || '-'}
                         </div>
-                        ${result.matchedFields ? `<div class="result-meta-item"><strong>Matched:</strong> ${result.matchedFields.join(', ')}</div>` : ''}
+                        <div class="result-meta-item">
+                            <strong>Score:</strong> ${result.relevanceScore ? result.relevanceScore.toFixed(2) : '-'}
+                        </div>
+                        ${result.matchedTerms ? `<div class="result-meta-item"><strong>Matched:</strong> ${result.matchedTerms.join(', ')}</div>` : ''}
                     </div>
                 </div>
             `).join('');
