@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.elasticsearch.annotations.DateFormat;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
@@ -44,7 +45,7 @@ public class SensorDocument {
     @Field(type = FieldType.Keyword)
     private String status;
 
-    @Field(type = FieldType.Date)
+    @Field(type = FieldType.Date, format = DateFormat.date_hour_minute_second_millis)
     private LocalDateTime lastReadingTime;
 
     @Field(type = FieldType.Double)
@@ -65,10 +66,10 @@ public class SensorDocument {
     @Field(type = FieldType.Integer)
     private Integer batteryLevel;
 
-    @Field(type = FieldType.Date)
+    @Field(type = FieldType.Date, format = DateFormat.date_hour_minute_second_millis)
     private LocalDateTime installationDate;
 
-    @Field(type = FieldType.Date)
+    @Field(type = FieldType.Date, format = DateFormat.date_hour_minute_second_millis)
     private LocalDateTime lastMaintenanceDate;
 
     // Security fields
@@ -84,10 +85,10 @@ public class SensorDocument {
     @Field(type = FieldType.Keyword)
     private String tenantId;
 
-    @Field(type = FieldType.Date)
+    @Field(type = FieldType.Date, format = DateFormat.date)
     private LocalDate createdAt;
 
-    @Field(type = FieldType.Date)
+    @Field(type = FieldType.Date, format = DateFormat.date)
     private LocalDate updatedAt;
 
     public static SensorDocument fromEntity(Sensor sensor) {
