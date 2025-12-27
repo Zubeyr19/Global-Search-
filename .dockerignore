@@ -1,0 +1,76 @@
+# Docker ignore file - excludes files from Docker build context
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# Build artifacts
+target/
+build/
+out/
+bin/
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Documentation (not needed in container)
+*.md
+docs/
+DEMO-GUIDE.md
+DESIGN-DOCUMENTATION.md
+FIXES_APPLIED.md
+PERFORMANCE*.md
+PROJECT_PROGRESS.txt
+ROLE_BASED_SEARCH_TESTING_GUIDE.md
+SEARCHSERVICE_OPTIMIZATIONS.md
+
+# Test files (not needed in runtime container)
+**/test/
+**/*Test.java
+**/*Tests.java
+
+# Frontend (if separate)
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+
+# Elasticsearch data
+elasticsearch/
+
+# Batch/shell scripts
+*.bat
+*.sh
+
+# Environment files (use docker-compose env instead)
+.env
+.env.example
+
+# UML and diagrams
+uml/
+
+# BDD tests
+bdd/
+
+# Performance tests
+performance-tests/
+
+# Local Elasticsearch
+elasticsearch-*/
+
+# Maven wrapper (optional, can include if needed)
+.mvn/
+mvnw
+mvnw.cmd

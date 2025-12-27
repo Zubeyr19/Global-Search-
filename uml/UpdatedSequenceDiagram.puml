@@ -1,0 +1,129 @@
+@startuml Global Search System - Sequence Diagram (Actual Implementation)
+!theme plain
+
+actor User
+participant "GlobalSearchController" as Controller
+participant "JwtAuthenticationFilter" as JwtFilter
+participant "JwtTokenProvider" as JwtProvider
+participant "Spring Security" as Security
+participant "SearchService" as SearchService
+participant "Cache" as Cache
+participant "CompanySearchRepository" as CompanyRepo
+participant "LocationSearchRepository" as LocationRepo
+participant "SensorSearchRepository" as SensorRepo
+participant "AuditLogService" as AuditLog
+participant "PerformanceMetricsService" as Metrics
+participant "NotificationService" as Notification
+
+User -> Controller: POST /api/search\n(GlobalSearchRequest + JWT token)
+activate Controller
+
+Controller -> JwtFilter: Filter incoming request
+activate JwtFilter
+
+JwtFilter -> JwtFilter: Extract token from\nAuthorization header
+JwtFilter -> JwtProvider: validateToken(token)
+activate JwtProvider
+JwtProvider --> JwtFilter: token valid
+deactivate JwtProvider
+
+JwtFilter -> JwtProvider: extractUsername(token)
+activate JwtProvider
+JwtProvider --> JwtFilter: username
+deactivate JwtProvider
+
+JwtFilter -> Security: loadUserByUsername(username)
+activate Security
+Security --> JwtFilter: UserDetails
+deactivate Security
+
+JwtFilter -> JwtProvider: extractTenantId(token)
+activate JwtProvider
+JwtProvider --> JwtFilter: tenantId
+deactivate JwtProvider
+
+JwtFilter -> Security: Set Authentication\n(User entity + authorities)
+JwtFilter -> JwtFilter: Set tenantId in request attribute
+JwtFilter --> Controller: Authentication successful
+deactivate JwtFilter
+
+Controller -> Controller: getCurrentUser() from\nSecurityContext
+
+Controller -> SearchService: globalSearch(request, currentUser, httpRequest)
+activate SearchService
+
+alt Cache enabled
+    SearchService -> Cache: Check cached results\nkey: query + tenantId + page + size
+    activate Cache
+    Cache --> SearchService: Cached results (if exists)
+    deactivate Cache
+
+    alt Cache hit
+        SearchService --> Controller: Return cached GlobalSearchResponse
+    end
+end
+
+alt Cache miss - Execute search
+    SearchService -> SearchService: createPageable(request)
+
+    alt Synonyms enabled
+        SearchService -> SearchService: expandWithSynonyms(query)
+    end
+
+    alt Search Companies
+        SearchService -> CompanyRepo: findByTenantIdAndNameContainingIgnoreCase\n(tenantId, query)
+        activate CompanyRepo
+        CompanyRepo --> SearchService: List<CompanyDocument>
+        deactivate CompanyRepo
+
+        alt Fuzzy search enabled
+            SearchService -> CompanyRepo: findByNameFuzzyAndTenantId\n(query, tenantId)
+            activate CompanyRepo
+            CompanyRepo --> SearchService: List<CompanyDocument>
+            deactivate CompanyRepo
+        end
+    end
+
+    alt Search Locations
+        SearchService -> LocationRepo: findByTenantIdAndNameContainingIgnoreCase\n(tenantId, query)
+        activate LocationRepo
+        LocationRepo --> SearchService: List<LocationDocument>
+        deactivate LocationRepo
+    end
+
+    alt Search Sensors
+        SearchService -> SensorRepo: findByTenantIdAndNameContainingIgnoreCase\n(tenantId, query)
+        activate SensorRepo
+        SensorRepo --> SearchService: List<SensorDocument>
+        deactivate SensorRepo
+    end
+
+    SearchService -> SearchService: Sort results by relevance score
+    SearchService -> SearchService: Apply pagination
+    SearchService -> SearchService: Build GlobalSearchResponse
+
+    SearchService -> Metrics: recordQueryExecution\n(tenantId, "global_search", duration)
+    activate Metrics
+    deactivate Metrics
+
+    SearchService -> AuditLog: logSearchEvent\n(userId, username, tenantId, query, resultsCount, httpRequest)
+    activate AuditLog
+    deactivate AuditLog
+
+    SearchService -> Notification: notifyUser\n(userId, WebSocketMessage)
+    activate Notification
+    deactivate Notification
+
+    SearchService -> Cache: Store results in cache
+    activate Cache
+    deactivate Cache
+
+    SearchService --> Controller: GlobalSearchResponse
+end
+
+deactivate SearchService
+
+Controller --> User: ResponseEntity<GlobalSearchResponse>
+deactivate Controller
+
+@enduml

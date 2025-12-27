@@ -1,0 +1,126 @@
+@startuml Global Search System - Activity Diagram (Actual Implementation)
+!theme plain
+
+start
+
+:User sends search request with JWT token;
+
+:JwtAuthenticationFilter receives request;
+
+:Extract JWT token from Authorization header;
+
+:Validate JWT token and signature;
+
+if (Token valid?) then (yes)
+    :Extract username from token claims;
+    :Load UserDetails from database;
+    :Extract tenantId from token claims;
+    :Set Authentication in SecurityContext;
+    :Set tenantId in request attribute;
+else (no)
+    :Return 401 Unauthorized;
+    stop
+endif
+
+:GlobalSearchController.search() called;
+
+:Get current user from SecurityContext;
+
+if (User authenticated?) then (yes)
+    :Check role-based permissions\n(via Spring Security);
+else (no)
+    :Return 403 Forbidden;
+    stop
+endif
+
+:SearchService.globalSearch() invoked;
+
+partition "Cache Check" {
+    :Build cache key:\nquery + tenantId + page + size;
+
+    if (Results in cache?) then (yes)
+        :Return cached results;
+        :Skip to return results;
+    else (no)
+        :Continue to execute search;
+    endif
+}
+
+partition "Query Preparation" {
+    :Create pageable (page, size, sort);
+
+    if (Synonyms enabled?) then (yes)
+        :Expand query with synonyms\nusing SearchUtils;
+    endif
+
+    :Initialize empty results list;
+}
+
+partition "Tenant-Filtered Search" {
+    if (Search Companies?) then (yes)
+        :Query CompanySearchRepository\nfiltered by tenantId;
+
+        if (Fuzzy search enabled?) then (yes)
+            :Add fuzzy matched results;
+        endif
+
+        :Convert to SearchResultItem\nwith highlighting;
+        :Add to results list;
+    endif
+
+    if (Search Locations?) then (yes)
+        :Query LocationSearchRepository\nfiltered by tenantId;
+        :Apply city/country filters if specified;
+        :Convert to SearchResultItem;
+        :Add to results list;
+    endif
+
+    if (Search Zones?) then (yes)
+        :Query ZoneSearchRepository\nfiltered by tenantId;
+        :Apply locationId filter if specified;
+        :Convert to SearchResultItem;
+        :Add to results list;
+    endif
+
+    if (Search Sensors?) then (yes)
+        :Query SensorSearchRepository\nfiltered by tenantId;
+        :Apply sensorType/zoneId filters;
+        :Convert to SearchResultItem;
+        :Add to results list;
+    endif
+
+    if (Search Reports?) then (yes)
+        :Query ReportSearchRepository\nfiltered by tenantId;
+        :Add to results list;
+    endif
+
+    if (Search Dashboards?) then (yes)
+        :Query DashboardSearchRepository\nfiltered by tenantId;
+        :Add to results list;
+    endif
+}
+
+partition "Post-Processing" {
+    :Sort all results by relevance score;
+    :Calculate pagination:\nstart = page * size\nend = min(start + size, total);
+    :Extract paginated subset of results;
+    :Calculate execution duration;
+}
+
+partition "Observability" {
+    :PerformanceMetricsService\nrecordQueryExecution(tenantId, duration);
+    :AuditLogService\nlogSearchEvent(userId, query, resultsCount);
+    :NotificationService\nnotifyUser via WebSocket;
+}
+
+partition "Caching" {
+    :Store results in cache\nwith TTL;
+}
+
+:Build GlobalSearchResponse:\n- results\n- totalResults\n- currentPage\n- totalPages\n- searchDurationMs;
+
+:Return ResponseEntity<GlobalSearchResponse>;
+
+stop
+
+@enduml

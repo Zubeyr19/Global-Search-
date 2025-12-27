@@ -1,0 +1,16 @@
+{
+  "mappings": {
+    "properties": {
+      "zone_id": { "type": "keyword" },
+      "location_id": { "type": "keyword" },
+      "name": { "type": "text", "analyzer": "standard" },
+      "type": { "type": "keyword" },
+      "tenant_id": { "type": "keyword" },
+      "allowed_roles": { "type": "keyword" },
+      "visibility": { "type": "keyword" }
+    }
+  }
+}
+
+
+

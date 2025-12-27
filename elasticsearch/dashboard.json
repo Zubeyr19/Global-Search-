@@ -1,0 +1,14 @@
+{
+  "mappings": {
+    "properties": {
+      "dashboard_id": { "type": "keyword" },
+      "company_id": { "type": "keyword" },
+      "title": { "type": "text", "analyzer": "standard" },
+      "widgets": { "type": "nested" },
+      "tenant_id": { "type": "keyword" },
+      "allowed_roles": { "type": "keyword" },
+      "visibility": { "type": "keyword" }
+    }
+  }
+}
+

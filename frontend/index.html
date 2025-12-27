@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Search Application</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 1200px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        /* Login Form */
+        .login-form {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            margin-top: 10px;
+        }
+
+        .btn-secondary:hover {
+            box-shadow: 0 10px 20px rgba(108, 117, 125, 0.4);
+        }
+
+        /* Alert Messages */
+        .alert {
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .alert-error {
+            background: #fee;
+            color: #c33;
+            border: 1px solid #fcc;
+        }
+
+        .alert-success {
+            background: #efe;
+            color: #3c3;
+            border: 1px solid #cfc;
+        }
+
+        .alert-info {
+            background: #eef;
+            color: #33c;
+            border: 1px solid #ccf;
+        }
+
+        /* User Info Bar */
+        .user-bar {
+            background: #f8f9fa;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-info {
+            display: flex;
+            gap: 20px;
+        }
+
+        .user-info-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-info-item label {
+            font-size: 11px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .user-info-item span {
+            font-weight: 600;
+            color: #333;
+            margin-top: 3px;
+        }
+
+        /* Search Section */
+        .search-section {
+            margin-bottom: 30px;
+        }
+
+        .search-box {
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 15px 50px 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 50px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+        }
+
+        .search-box button {
+            position: absolute;
+            right: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 10px 25px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .search-filters {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            background: #f0f0f0;
+            border: 2px solid transparent;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+
+        .filter-btn:hover {
+            background: #e0e0e0;
+        }
+
+        .filter-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        /* Search Results */
+        .results-container {
+            margin-top: 30px;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .results-count {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .result-item {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s;
+        }
+
+        .result-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .result-type {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .result-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .result-description {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .result-meta {
+            display: flex;
+            gap: 20px;
+            font-size: 12px;
+            color: #999;
+        }
+
+        .result-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Stats Section */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s;
+        }
+
+        .tab:hover {
+            color: #667eea;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .no-results svg {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Global Search Application</h1>
+            <p>Advanced search across all your data</p>
+        </div>
+
+        <div class="content">
+            <!-- Login View -->
+            <div id="loginView">
+                <div class="login-form">
+                    <h2 style="text-align: center; margin-bottom: 30px; color: #333;">Sign In</h2>
+                    <div id="loginAlert"></div>
+                    <form id="loginForm">
+                        <div class="form-group">
+                            <label for="username">Username</label>
+                            <input type="text" id="username" name="username" required placeholder="Enter your username">
+                        </div>
+                        <div class="form-group">
+                            <label for="password">Password</label>
+                            <input type="password" id="password" name="password" required placeholder="Enter your password">
+                        </div>
+                        <button type="submit" class="btn">Sign In</button>
+                    </form>
+                    <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; font-size: 13px;">
+                        <strong>🔐 Test Role-Based Access Control:</strong><br>
+                        <div style="margin-top: 12px;">
+                            <div style="margin-bottom: 10px;">
+                                <strong>1️⃣ Super Admin (sees ALL data):</strong><br>
+                                <code>superadmin</code> | <code>admin123</code>
+                            </div>
+                            <div style="margin-bottom: 10px;">
+                                <strong>2️⃣ Admin (sees only their tenant):</strong><br>
+                                <code>admin</code> | <code>password123</code>
+                            </div>
+                            <div>
+                                <strong>3️⃣ Regular User (same tenant as admin):</strong><br>
+                                <code>user</code> | <code>password123</code>
+                            </div>
+                        </div>
+                        <div style="margin-top: 15px; padding: 12px; background: #fff3cd; border-radius: 5px; font-size: 12px;">
+                            <strong>💡 Demo:</strong> Login as each user and search for <strong>"Chicago"</strong><br>
+                            • Superadmin sees everything<br>
+                            • Admin & User see only TENANT_LOGISTICS data<br>
+                            This proves role-based access control works!
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main App View -->
+            <div id="appView" class="hidden">
+                <!-- User Info Bar -->
+                <div class="user-bar">
+                    <div class="user-info">
+                        <div class="user-info-item">
+                            <label>User</label>
+                            <span id="userFullName">-</span>
+                        </div>
+                        <div class="user-info-item">
+                            <label>Username</label>
+                            <span id="userUsername">-</span>
+                        </div>
+                        <div class="user-info-item">
+                            <label>Tenant</label>
+                            <span id="userTenant">-</span>
+                        </div>
+                        <div class="user-info-item">
+                            <label>Role</label>
+                            <span id="userRole">-</span>
+                        </div>
+                    </div>
+                    <button onclick="logout()" class="btn btn-secondary" style="width: auto; padding: 10px 20px;">Logout</button>
+                </div>
+
+                <!-- Tabs -->
+                <div class="tabs">
+                    <button class="tab active" onclick="showTab('search')">Search</button>
+                    <button class="tab" onclick="showTab('stats')">Statistics</button>
+                </div>
+
+                <!-- Search Tab -->
+                <div id="searchTab">
+                    <div class="search-section">
+                        <div class="search-box">
+                            <input type="text" id="searchInput" placeholder="Search for anything..." onkeypress="handleSearchKeypress(event)">
+                            <button onclick="performSearch()">Search</button>
+                        </div>
+                        <div class="search-filters">
+                            <button class="filter-btn active" data-type="all" onclick="selectFilter(this, 'all')">All</button>
+                            <button class="filter-btn" data-type="USER" onclick="selectFilter(this, 'USER')">Users</button>
+                            <button class="filter-btn" data-type="COMPANY" onclick="selectFilter(this, 'COMPANY')">Companies</button>
+                            <button class="filter-btn" data-type="POLICY" onclick="selectFilter(this, 'POLICY')">Policies</button>
+                        </div>
+                    </div>
+
+                    <div id="searchResults" class="results-container hidden">
+                        <div class="results-header">
+                            <div class="results-count" id="resultsCount">0 results</div>
+                        </div>
+                        <div id="resultsList"></div>
+                    </div>
+
+                    <div id="noResults" class="no-results hidden">
+                        <svg fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path>
+                        </svg>
+                        <h3>No results found</h3>
+                        <p>Try adjusting your search query or filters</p>
+                    </div>
+                </div>
+
+                <!-- Stats Tab -->
+                <div id="statsTab" class="hidden">
+                    <div id="statsLoading" class="spinner"></div>
+                    <div id="statsContent" class="hidden">
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-value" id="totalSearches">0</div>
+                                <div class="stat-label">Total Searches</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="avgSearches">0</div>
+                                <div class="stat-label">Avg per Day</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="periodDays">7</div>
+                                <div class="stat-label">Days Period</div>
+                            </div>
+                        </div>
+                        <div style="margin-top: 30px;">
+                            <h3 style="margin-bottom: 15px; color: #333;">Recent Searches</h3>
+                            <div id="recentSearchesList"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/api';
+        let authToken = null;
+        let currentFilter = 'all';
+
+        // Login
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    authToken = data.accessToken;
+                    showAlert('loginAlert', 'Login successful!', 'success');
+                    setTimeout(() => {
+                        showApp(data);
+                    }, 500);
+                } else {
+                    showAlert('loginAlert', data.message || 'Login failed', 'error');
+                }
+            } catch (error) {
+                showAlert('loginAlert', 'Connection error. Make sure the server is running.', 'error');
+            }
+        });
+
+        function showAlert(elementId, message, type) {
+            const alertDiv = document.getElementById(elementId);
+            alertDiv.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+            setTimeout(() => {
+                alertDiv.innerHTML = '';
+            }, 5000);
+        }
+
+        function showApp(userData) {
+            document.getElementById('loginView').classList.add('hidden');
+            document.getElementById('appView').classList.remove('hidden');
+
+            document.getElementById('userFullName').textContent = userData.fullName || '-';
+            document.getElementById('userUsername').textContent = userData.username || '-';
+            document.getElementById('userTenant').textContent = userData.tenantId || '-';
+            document.getElementById('userRole').textContent = (userData.roles || []).join(', ') || '-';
+        }
+
+        function logout() {
+            authToken = null;
+            document.getElementById('loginView').classList.remove('hidden');
+            document.getElementById('appView').classList.add('hidden');
+            document.getElementById('loginForm').reset();
+        }
+
+        function selectFilter(button, type) {
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            currentFilter = type;
+        }
+
+        function handleSearchKeypress(event) {
+            if (event.key === 'Enter') {
+                performSearch();
+            }
+        }
+
+        async function performSearch() {
+            const query = document.getElementById('searchInput').value.trim();
+            if (!query) return;
+
+            const searchResults = document.getElementById('searchResults');
+            const resultsList = document.getElementById('resultsList');
+            const noResults = document.getElementById('noResults');
+
+            resultsList.innerHTML = '<div class="spinner"></div>';
+            searchResults.classList.remove('hidden');
+            noResults.classList.add('hidden');
+
+            try {
+                const requestBody = {
+                    query: query,
+                    page: 0,
+                    size: 20
+                };
+
+                if (currentFilter !== 'all') {
+                    requestBody.entityTypes = [currentFilter];
+                }
+
+                const response = await fetch(`${API_BASE}/search`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    data.query = query; // Add query to data for highlighting
+                    displayResults(data);
+                } else {
+                    resultsList.innerHTML = `<div class="alert alert-error">${data.error || 'Search failed'}</div>`;
+                }
+            } catch (error) {
+                resultsList.innerHTML = '<div class="alert alert-error">Connection error. Please try again.</div>';
+            }
+        }
+
+        function displayResults(data) {
+            const resultsList = document.getElementById('resultsList');
+            const resultsCount = document.getElementById('resultsCount');
+            const noResults = document.getElementById('noResults');
+
+            if (!data.results || data.results.length === 0) {
+                resultsList.innerHTML = '';
+                document.getElementById('searchResults').classList.add('hidden');
+                noResults.classList.remove('hidden');
+                return;
+            }
+
+            resultsCount.textContent = `${data.totalResults || data.results.length} results found in ${data.searchDurationMs}ms`;
+
+            resultsList.innerHTML = data.results.map(result => `
+                <div class="result-item">
+                    <span class="result-type">${result.entityType || 'Unknown'}</span>
+                    <div class="result-title">${highlightText(result.name || 'Untitled', data.query)}</div>
+                    <div class="result-description">${highlightText(result.description || 'No description available', data.query)}</div>
+                    <div class="result-meta">
+                        <div class="result-meta-item">
+                            <strong>ID:</strong> ${result.id || '-'}
+                        </div>
+                        <div class="result-meta-item">
+                            <strong>Tenant:</strong> ${result.metadata?.tenantId || '-'}
+                        </div>
+                        <div class="result-meta-item">
+                            <strong>Score:</strong> ${result.relevanceScore ? result.relevanceScore.toFixed(2) : '-'}
+                        </div>
+                        ${result.matchedTerms ? `<div class="result-meta-item"><strong>Matched:</strong> ${result.matchedTerms.join(', ')}</div>` : ''}
+                    </div>
+                </div>
+            `).join('');
+
+            noResults.classList.add('hidden');
+        }
+
+        function highlightText(text, query) {
+            if (!query) return text;
+            const regex = new RegExp(`(${query})`, 'gi');
+            return text.replace(regex, '<mark style="background: #fff3cd; padding: 2px 4px; border-radius: 3px;">$1</mark>');
+        }
+
+        function showTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+
+            document.getElementById('searchTab').classList.add('hidden');
+            document.getElementById('statsTab').classList.add('hidden');
+
+            if (tabName === 'search') {
+                document.getElementById('searchTab').classList.remove('hidden');
+            } else if (tabName === 'stats') {
+                document.getElementById('statsTab').classList.remove('hidden');
+                loadStats();
+            }
+        }
+
+        async function loadStats() {
+            const statsLoading = document.getElementById('statsLoading');
+            const statsContent = document.getElementById('statsContent');
+
+            statsLoading.classList.remove('hidden');
+            statsContent.classList.add('hidden');
+
+            try {
+                const response = await fetch(`${API_BASE}/search/stats?days=7`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    document.getElementById('totalSearches').textContent = data.totalSearches || 0;
+                    document.getElementById('avgSearches').textContent = data.avgSearchesPerDay || '0';
+                    document.getElementById('periodDays').textContent = data.periodDays || 7;
+
+                    const recentList = document.getElementById('recentSearchesList');
+                    if (data.recentSearches && data.recentSearches.length > 0) {
+                        recentList.innerHTML = data.recentSearches.map(search => `
+                            <div class="result-item">
+                                <div class="result-title">${search.query}</div>
+                                <div class="result-meta">
+                                    <div class="result-meta-item">
+                                        <strong>Time:</strong> ${new Date(search.timestamp).toLocaleString()}
+                                    </div>
+                                    <div class="result-meta-item">
+                                        <strong>IP:</strong> ${search.ipAddress}
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('');
+                    } else {
+                        recentList.innerHTML = '<div class="alert alert-info">No recent searches found</div>';
+                    }
+
+                    statsLoading.classList.add('hidden');
+                    statsContent.classList.remove('hidden');
+                }
+            } catch (error) {
+                statsLoading.innerHTML = '<div class="alert alert-error">Failed to load statistics</div>';
+            }
+        }
+    </script>
+</body>
+</html>
