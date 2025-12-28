@@ -41,3 +41,32 @@ spring-boot-starter-web.log
 *.env
 .env.local
 .env.*.local
+
+# Documentation archive (old docs - don't commit to git)
+archive/
+
+# Temporary documentation files
+*.md.bak
+*.md~
+
+# JMeter results
+*.jtl
+*.csv
+jmeter.log
+
+# Test coverage reports
+coverage/
+.jacoco/
+
+# Database files (H2 for testing)
+*.db
+*.trace.db
+
+# Elasticsearch data (if running locally)
+elasticsearch/data/
+elasticsearch/logs/
+
+# Sensitive configuration (never commit)
+**/application-prod.properties
+**/application-local.properties
+secrets.properties
