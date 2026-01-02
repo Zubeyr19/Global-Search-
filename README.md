@@ -463,15 +463,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-## 🙏 Acknowledgments
-
-- **Supervisor:** [Supervisor Name] - Technical guidance and project oversight
-- **Spring Boot Team** - Excellent framework and documentation
-- **Elasticsearch** - Powerful search capabilities
-- **SDU Software Engineering Program** - Academic support
-
----
-
 ## 📞 Support
 
 For issues or questions:
