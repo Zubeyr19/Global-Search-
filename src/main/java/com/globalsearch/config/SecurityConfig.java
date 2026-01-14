@@ -83,6 +83,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/public/**").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        .requestMatchers("/api/admin/seed/**").permitAll() // TEMPORARY: Allow seeding without auth
 
                         // Admin only endpoints
                         .requestMatchers("/api/admin/**").hasRole("SUPER_ADMIN")
